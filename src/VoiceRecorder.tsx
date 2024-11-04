@@ -58,7 +58,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ token }) => {
             
             if (audioRef.current) {
                 audioRef.current.src = responseAudioURL;
-                audioRef.current.load(); // Preload the audio
                 audioRef.current.play();
             }
 
