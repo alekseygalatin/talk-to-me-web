@@ -312,7 +312,11 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import axios from 'axios';
 import './VoiceRecorder.css';
 
-const VoiceRecorder: React.FC = () => {
+interface VoiceRecorderProps {
+    token: string;
+}
+
+const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ token }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [textMessage, setTextMessage] = useState('');
     const [isTextSending, setIsTextSending] = useState(false);
@@ -349,10 +353,11 @@ const VoiceRecorder: React.FC = () => {
         setTextMessage('');
 
         try {
+            console.log("TK: " + token);
             const response = await axios.post(
                 'https://2inmmpsyon2mm664xfotrr66cy0sajtd.lambda-url.us-east-1.on.aws/process-text',
                 { text: textMessage, sessionId: "1234" },
-                { headers: { 'Content-Type': 'application/json' }, responseType: 'blob' }
+                { headers: { 'Content-Type': 'application/json', 'Authorization': token }, responseType: 'blob' }
             );
 
             const responseWavBlob = new Blob([response.data], { type: 'audio/wav' });
