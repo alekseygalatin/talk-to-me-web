@@ -4,7 +4,8 @@ import VoiceRecorder from './VoiceRecorder';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
-const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with your S3 URL
+//const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with your S3 URL
+const redirectUri = 'http://localhost:3000'; // Replace with your S3 URL
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
