@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import './App.css';
-import VoiceRecorder from './VoiceRecorder';
+import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { MessageBubble } from './components/MessageBubble';
+import { ChatInput } from './components/ChatInput';
+import { Sidebar } from './components/Sidebar';
+import { MessageSquare, Settings } from 'lucide-react';
+import type { Message, ChatState } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
@@ -8,95 +12,246 @@ const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with you
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
-    exp: number; // Expiration time
+  exp: number;
 }
 
-const App: React.FC = () => {
-    const [token, setToken] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+function App() {
+  const [state, setState] = useState<ChatState>({
+    messages: [],
+    isRecording: false,
+    isProcessing: false,
+  });
 
-    useEffect(() => {
-        // Check for token in localStorage
-        const storedToken = localStorage.getItem('idToken');
-        if (storedToken && !isTokenExpired(storedToken)) {
-            setToken(storedToken);
-            setLoading(false);
-        } else {
-            handleCallback(); // Handles the callback if code is present
+  const [settings, setSettings] = useState({
+    volume: 80,
+    language: 'sv-SE',
+    theme: 'light' as const,
+    microphoneSensitivity: 75,
+  });
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('idToken');
+    if (storedToken && !isTokenExpired(storedToken)) {
+      setToken(storedToken);
+      setLoading(false);
+    } else {
+      handleCallback();
+    }
+  }, []);
+
+  const redirectToLogin = () => {
+    const loginUrl = `https://talk-to-me.auth.us-east-1.amazoncognito.com/login?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}`;
+    window.location.href = loginUrl;
+  };
+
+  const handleCallback = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code) {
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          code: code,
+        }),
+      });
+
+      if (response.ok) {
+        const tokens = await response.json();
+        const idToken = tokens.id_token;
+        localStorage.setItem('idToken', idToken);
+        setToken(idToken);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        console.error('Token exchange failed:', await response.text());
+        redirectToLogin();
+      }
+    } else {
+      redirectToLogin();
+    }
+    setLoading(false);
+  };
+
+  const isTokenExpired = (token: string) => {
+    const decoded: JwtPayload = jwtDecode(token);
+    return decoded.exp * 1000 < Date.now();
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const storedToken = localStorage.getItem('idToken');
+      if (storedToken && isTokenExpired(storedToken)) {
+        redirectToLogin();
+      }
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = settings.language;
+      setRecognition(recognition);
+    }
+  }, [settings.language]);
+
+  const startRecording = useCallback(() => {
+    if (recognition) {
+      recognition.start();
+      setState(prev => ({ ...prev, isRecording: true }));
+    }
+  }, [recognition]);
+
+  const stopRecording = useCallback(() => {
+    if (recognition) {
+      recognition.stop();
+      setState(prev => ({ ...prev, isRecording: false }));
+    }
+  }, [recognition]);
+
+  useEffect(() => {
+    if (recognition) {
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+
+        if (event.results[0].isFinal) {
+          handleSendMessage(transcript);
+          stopRecording();
         }
-    }, []);
+      };
+    }
+  }, [recognition, stopRecording]);
 
-    // Function to redirect user to Cognito login
-    const redirectToLogin = () => {
-        const loginUrl = `https://talk-to-me.auth.us-east-1.amazoncognito.com/login?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}`;
-        window.location.href = loginUrl;
+  const handleSendMessage = async (text: string) => {
+    if (!token) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text,
+      isUser: true,
+      timestamp: new Date(),
     };
 
-    // Function to handle callback and retrieve token
-    const handleCallback = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
+    setState(prev => ({
+      ...prev,
+      messages: [...prev.messages, newMessage],
+      isProcessing: true,
+    }));
 
-        if (code) {
-            // Exchange code for tokens
-            const response = await fetch(tokenUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    grant_type: 'authorization_code',
-                    client_id: clientId,
-                    redirect_uri: redirectUri,
-                    code: code,
-                }),
-            });
+    try {
+      const response = await axios.post(
+          'https://2inmmpsyon2mm664xfotrr66cy0sajtd.lambda-url.us-east-1.on.aws/process-text',
+          { text: text, sessionId: "1234" },
+          { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+      );
 
-            if (response.ok) {
-                const tokens = await response.json();
-                const idToken = tokens.id_token;
-                localStorage.setItem('idToken', idToken);
-                setToken(idToken);
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else {
-                console.error('Token exchange failed:', await response.text());
-                redirectToLogin();
-            }
-        } else {
-            redirectToLogin();
-        }
-        setLoading(false);
-    };
+      const audioBytes = Uint8Array.from(atob(response.data.Audio), c => c.charCodeAt(0));
+      const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
+      const responseAudioURL = URL.createObjectURL(responseWavBlob);
 
-    // Helper function to check if token is expired
-    const isTokenExpired = (token: string) => {
-        const decoded: JwtPayload = jwtDecode(token);
-        return decoded.exp * 1000 < Date.now();
-    };
+      const botMessage: Message = {
+        id: Date.now().toString(),
+        text: response.data.Text,
+        isUser: false,
+        timestamp: new Date(),
+        audioUrl: responseAudioURL,
+      };
 
-    useEffect(() => {
-        // Check for token expiration periodically and refresh if necessary
-        const interval = setInterval(() => {
-            const storedToken = localStorage.getItem('idToken');
-            if (storedToken && isTokenExpired(storedToken)) {
-                redirectToLogin(); // Redirect to login if token is expired
-            }
-        }, 5 * 60 * 1000); // Check every 5 minutes
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, botMessage],
+        isProcessing: false,
+      }));
+    } catch (error) {
+      console.error('Error:', error);
+      setState(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
 
-        return () => clearInterval(interval);
-    }, []);
+  const handleSettingsChange = (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
 
-    return (
-        <div className="App">
-            {loading ? (
-                <p>Loading...</p>
-            ) : token ? (
-                <VoiceRecorder token={token} />
-            ) : (
-                <p>Please log in to access the Voice Recorder.</p>
-            )}
-        </div>
-    );
-};
+  return (
+      <div className={`min-h-screen ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
+        {loading ? (
+            <p>Loading...</p>
+        ) : token ? (
+            <div className="max-w-3xl mx-auto p-4 h-screen flex flex-col">
+              <header className={`flex items-center justify-between p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mb-4`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-600 rounded-xl">
+                    <MessageSquare className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className={`text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                    Voice Chat Assistant
+                  </h1>
+                </div>
+                <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className={`p-2 rounded-lg transition-colors ${
+                        settings.theme === 'dark'
+                            ? 'hover:bg-gray-700 text-gray-300'
+                            : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              </header>
+
+              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
+                {state.messages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      <p>Start a conversation by typing or using voice input!</p>
+                    </div>
+                ) : (
+                    state.messages.map((message) => (
+                        <MessageBubble
+                            key={message.id}
+                            message={message}
+                            theme={settings.theme}
+                        />
+                    ))
+                )}
+              </div>
+
+              <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mt-4`}>
+                <ChatInput
+                    onSendMessage={handleSendMessage}
+                    isRecording={state.isRecording}
+                    isProcessing={state.isProcessing}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    theme={settings.theme}
+                />
+              </div>
+            </div>
+        ) : (
+            <p>Please log in to access the Voice Chat Assistant.</p>
+        )}
+
+        <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+            settings={settings}
+            onSettingsChange={handleSettingsChange}
+        />
+      </div>
+  );
+
+}
 
 export default App;
