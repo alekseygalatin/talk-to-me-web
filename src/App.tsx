@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MessageBubble } from './components/MessageBubble';
 import { ChatInput } from './components/ChatInput';
@@ -18,7 +18,6 @@ interface JwtPayload {
 function App() {
   const [state, setState] = useState<ChatState>({
     messages: [],
-    isRecording: false,
     isProcessing: false,
   });
 
@@ -26,11 +25,10 @@ function App() {
     volume: 80,
     language: 'sv-SE',
     theme: 'light' as const,
-    microphoneSensitivity: 75,
+    microphoneSensitivity: 100,
   });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -95,46 +93,7 @@ function App() {
     }, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window) {
-      const recognition = new webkitSpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = settings.language;
-      setRecognition(recognition);
-    }
-  }, [settings.language]);
-
-  const startRecording = useCallback(() => {
-    if (recognition) {
-      recognition.start();
-      setState(prev => ({ ...prev, isRecording: true }));
-    }
-  }, [recognition]);
-
-  const stopRecording = useCallback(() => {
-    if (recognition) {
-      recognition.stop();
-      setState(prev => ({ ...prev, isRecording: false }));
-    }
-  }, [recognition]);
-
-  useEffect(() => {
-    if (recognition) {
-      recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-            .map(result => result[0].transcript)
-            .join('');
-
-        if (event.results[0].isFinal) {
-          handleSendMessage(transcript);
-          stopRecording();
-        }
-      };
-    }
-  }, [recognition, stopRecording]);
-
+  
   const handleSendMessage = async (text: string) => {
     if (!token) return;
 
@@ -190,59 +149,56 @@ function App() {
         {loading ? (
             <p>Loading...</p>
         ) : token ? (
-            <div className="max-w-3xl mx-auto p-4 h-screen flex flex-col">
-              <header className={`flex items-center justify-between p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mb-4`}>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-600 rounded-xl">
-                    <MessageSquare className="w-6 h-6 text-white" />
-                  </div>
-                  <h1 className={`text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                    Voice Chat Assistant
-                  </h1>
+          <div className="max-w-3xl mx-auto p-4 h-screen flex flex-col">
+            <header className={`flex items-center justify-between p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mb-4`}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-600 rounded-xl">
+                  <MessageSquare className="w-6 h-6 text-white" />
                 </div>
-                <button
-                    onClick={() => setIsSidebarOpen(true)}
-                    className={`p-2 rounded-lg transition-colors ${
-                        settings.theme === 'dark'
-                            ? 'hover:bg-gray-700 text-gray-300'
-                            : 'hover:bg-gray-100 text-gray-600'
-                    }`}
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-              </header>
-
-              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
-                {state.messages.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-gray-500">
-                      <p>Start a conversation by typing or using voice input!</p>
-                    </div>
-                ) : (
-                    state.messages.map((message) => (
-                        <MessageBubble
-                            key={message.id}
-                            message={message}
-                            theme={settings.theme}
-                        />
-                    ))
-                )}
+                <h1 className={`text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                  Voice Chat Assistant
+                </h1>
               </div>
-
-              <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mt-4`}>
-                <ChatInput
-                    onSendMessage={handleSendMessage}
-                    isRecording={state.isRecording}
-                    isProcessing={state.isProcessing}
-                    onStartRecording={startRecording}
-                    onStopRecording={stopRecording}
-                    theme={settings.theme}
-                />
-              </div>
+              <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className={`p-2 rounded-lg transition-colors ${
+                      settings.theme === 'dark'
+                          ? 'hover:bg-gray-700 text-gray-300'
+                          : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </header>
+  
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
+              {state.messages.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-500">
+                    <p>Start a conversation by typing or using voice input!</p>
+                  </div>
+              ) : (
+                  state.messages.map((message) => (
+                      <MessageBubble
+                          key={message.id}
+                          message={message}
+                          theme={settings.theme}
+                      />
+                  ))
+              )}
             </div>
+  
+            <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mt-4`}>
+              <ChatInput
+                  onSendMessage={handleSendMessage}
+                  isProcessing={state.isProcessing}
+                  theme={settings.theme}
+                  language={settings.language}
+              />
+            </div>
+          </div>
         ) : (
             <p>Please log in to access the Voice Chat Assistant.</p>
         )}
-
         <Sidebar
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
@@ -251,7 +207,6 @@ function App() {
         />
       </div>
   );
-
 }
 
 export default App;
