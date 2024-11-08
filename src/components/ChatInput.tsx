@@ -1,6 +1,7 @@
-import { Mic, Send, Loader2, MicOff } from 'lucide-react';
+import { Mic, Send, Loader2, MicOff, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { TipsDialog } from './TipsDialog';
 
 interface ChatInputProps {
     onSendMessage: (text: string) => void;
@@ -16,6 +17,7 @@ export function ChatInput({
                               language,
                           }: ChatInputProps) {
     const [message, setMessage] = useState('');
+    const [isTipsOpen, setIsTipsOpen] = useState(false);
     const {
         transcript,
         listening,
@@ -86,69 +88,92 @@ export function ChatInput({
     }
 
     return (
-        <form onSubmit={handleSubmit} className="relative">
-      <textarea
-          value={listening ? transcript : message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder={listening ? 'Listening...' : 'Type a message...'}
-          className={`w-full rounded-2xl border ${
-              isDark
-                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400'
-                  : 'border-gray-200 bg-white text-gray-900'
-          } pl-4 pr-24 py-3 focus:outline-none focus:border-blue-500 resize-none min-h-[52px] ${
-              listening ? 'animate-pulse' : ''
-          }`}
-          rows={1}
-          disabled={isProcessing || listening}
-      />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                {isMicrophoneAvailable ? (
+        <>
+            <form onSubmit={handleSubmit} className="relative">
+                <textarea
+                    value={listening ? transcript : message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={listening ? 'Listening...' : 'Type a message...'}
+                    className={`w-full rounded-2xl border ${
+                        isDark
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400'
+                            : 'border-gray-200 bg-white text-gray-900'
+                    } pl-4 pr-32 py-3 focus:outline-none focus:border-blue-500 resize-none min-h-[52px] ${
+                        listening ? 'animate-pulse' : ''
+                    }`}
+                    rows={1}
+                    disabled={isProcessing || listening}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     <button
                         type="button"
-                        onClick={toggleListening}
-                        className={`p-2 rounded-full transition-all ${
-                            listening
-                                ? 'bg-red-500 text-white animate-pulse'
-                                : isDark
-                                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                    : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        disabled={isProcessing}
-                        title={listening ? 'Stop listening' : 'Start listening'}
+                        onClick={() => setIsTipsOpen(true)}
+                        className={`p-2.5 rounded-full ${
+                            isDark
+                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        } transition-colors`}
+                        aria-label="Show tips"
                     >
-                        {listening ? (
-                            <MicOff className="w-4 h-4" />
+                        <Info className="w-5 h-5" />
+                    </button>
+                    {isMicrophoneAvailable ? (
+                        <button
+                            type="button"
+                            onClick={toggleListening}
+                            className={`p-2.5 rounded-full transition-all ${
+                                listening
+                                    ? 'bg-red-500 text-white animate-pulse hover:bg-red-600'
+                                    : isDark
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        : 'bg-gray-100 hover:bg-gray-200'
+                            }`}
+                            disabled={isProcessing}
+                            title={listening ? 'Stop listening' : 'Start listening'}
+                        >
+                            {listening ? (
+                                <MicOff className="w-5 h-5" />
+                            ) : (
+                                <Mic className="w-5 h-5" />
+                            )}
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            className={`p-2.5 rounded-full ${
+                                isDark
+                                    ? 'bg-gray-700 text-gray-500'
+                                    : 'bg-gray-100 text-gray-400'
+                            } cursor-not-allowed`}
+                            disabled
+                            title="Microphone access denied"
+                        >
+                            <MicOff className="w-5 h-5" />
+                        </button>
+                    )}
+                    <button
+                        type="submit"
+                        disabled={!message.trim() || isProcessing || listening}
+                        className={`p-2.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isDark 
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:hover:bg-blue-600'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white disabled:hover:bg-blue-500'
+                        }`}
+                    >
+                        {isProcessing ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                            <Mic className="w-4 h-4" />
+                            <Send className="w-5 h-5" />
                         )}
                     </button>
-                ) : (
-                    <button
-                        type="button"
-                        className={`p-2 rounded-full ${
-                            isDark
-                                ? 'bg-gray-700 text-gray-500'
-                                : 'bg-gray-100 text-gray-400'
-                        } cursor-not-allowed`}
-                        disabled
-                        title="Microphone access denied"
-                    >
-                        <MicOff className="w-4 h-4" />
-                    </button>
-                )}
-                <button
-                    type="submit"
-                    disabled={!message.trim() || isProcessing || listening}
-                    className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-all disabled:opacity-50 disabled:hover:bg-blue-600"
-                >
-                    {isProcessing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Send className="w-4 h-4" />
-                    )}
-                </button>
-            </div>
-        </form>
+                </div>
+            </form>
+            <TipsDialog
+                isOpen={isTipsOpen}
+                onClose={() => setIsTipsOpen(false)}
+                theme={theme}
+            />
+        </>
     );
 }
