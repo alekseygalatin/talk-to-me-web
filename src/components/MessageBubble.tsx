@@ -82,6 +82,60 @@ export function MessageBubble({ message, theme }: MessageBubbleProps) {
   } | null>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const isDark = theme === 'dark';
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressInterval = useRef<number>();
+
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      const audio = audioRef.current;
+
+      const updateProgress = () => {
+        if (audio.duration) {
+          setProgress((audio.currentTime / audio.duration) * 100);
+        }
+      };
+
+      audio.addEventListener('timeupdate', updateProgress);
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setProgress(0);
+      });
+
+      return () => {
+        audio.removeEventListener('timeupdate', updateProgress);
+        audio.removeEventListener('ended', () => {
+          setIsPlaying(false);
+          setProgress(0);
+        });
+      };
+    }
+  }, []);
+
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (audioRef.current) {
+      const progressBar = e.currentTarget;
+      const rect = progressBar.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      const time = (percentage / 100) * audioRef.current.duration;
+
+      audioRef.current.currentTime = time;
+      setProgress(percentage);
+    }
+  };
 
   const handleWordClick = (word: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -124,24 +178,57 @@ export function MessageBubble({ message, theme }: MessageBubbleProps) {
         onClick={() => setSelectedWord(null)}
       >
         <div
-          className={`relative max-w-[80%] rounded-2xl px-4 py-2 ${
-            message.isUser
-              ? theme === 'dark'
-                ? 'bg-blue-600 text-white'
-                : 'bg-blue-500 text-white'
-              : theme === 'dark'
-                ? 'bg-gray-700 text-white'
-                : 'bg-gray-100 text-gray-900'
-          }`}
+            className={`relative max-w-[80%] rounded-2xl px-4 py-2 ${
+                message.isUser
+                    ? theme === 'dark'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-500 text-white'
+                    : theme === 'dark'
+                        ? 'bg-gray-700 text-white'
+                        : 'bg-gray-100 text-gray-900'
+            }`}
         >
           {renderWords(message.text)}
+          {message.audioUrl && (
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                    onClick={toggleAudio}
+                    className="p-2 rounded-full hover:bg-black/10 transition-colors"
+                >
+                  {isPlaying ? (
+                      <Pause className="w-4 h-4"/>
+                  ) : (
+                      <Play className="w-4 h-4"/>
+                  )}
+                </button>
+                <audio
+                    ref={audioRef}
+                    src={message.audioUrl}
+                    onEnded={() => setIsPlaying(false)}
+                    className="hidden"
+                />
+                <div
+                    className="h-1.5 flex-1 bg-black/10 rounded-full cursor-pointer overflow-hidden"
+                    onClick={handleProgressBarClick}
+                >
+                  <motion.div
+                      className="h-full bg-black/20 rounded-full"
+                      style={{width: `${progress}%`}}
+                      transition={{type: "tween"}}
+                  />
+                </div>
+              </div>
+          )}
+          <span className="text-xs opacity-60 mt-1 block">
+          {new Date(message.timestamp).toLocaleTimeString()}
+        </span>
         </div>
       </motion.div>
 
       <AnimatePresence>
         {selectedWord && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            <motion.div
+                initial={{opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             className={`fixed z-50 px-4 py-2 rounded-lg shadow-lg ${
