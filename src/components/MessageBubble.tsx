@@ -104,6 +104,8 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
             <button
               onClick={() => {
                 const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'sv-SE';
+                utterance.rate = 0.9;
                 window.speechSynthesis.speak(utterance);
               }}
               className={`text-sm px-2 py-1 rounded ${
