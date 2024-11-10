@@ -152,6 +152,7 @@ function App() {
         { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
     );
     
+    console.log(response.data)
     return JSON.parse(response.data.Json);
   }, []);
 
