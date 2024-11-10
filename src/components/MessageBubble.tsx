@@ -72,11 +72,14 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
       }}
     >
       <div 
-        className={`absolute -top-1 w-2 h-2 transform -translate-y-1/2 rotate-45 ${
-          isDark ? 'bg-gray-800' : 'bg-white'
-        }`}
+        className="absolute -top-2"
         style={{ 
           left: '10px',
+          width: 0,
+          height: 0,
+          borderLeft: '8px solid transparent',
+          borderRight: '8px solid transparent',
+          borderBottom: `8px solid ${isDark ? '#1f2937' : '#ffffff'}`,
         }}
       />
       
@@ -202,7 +205,7 @@ export function MessageBubble({ message, theme, onTranslate }: MessageBubbleProp
     setSelectedWord({
       word,
       position: {
-        x: clickRect.left - 50,
+        x: clickRect.left,
         y: clickRect.bottom + 10,
       },
     });
