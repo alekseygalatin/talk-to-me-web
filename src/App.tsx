@@ -151,8 +151,8 @@ function App() {
         { text: word, sessionId: "1234" },
         { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
     );
-    const data = JSON.parse(response.data);
-    return data;
+    
+    return JSON.parse(response.data.Json);
   }, []);
 
   return (

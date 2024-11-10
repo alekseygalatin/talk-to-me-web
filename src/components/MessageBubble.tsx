@@ -110,9 +110,13 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
         </div>
       ) : (
-        <div className="mt-1 text-sm">
-          {translation && <span>{translation}</span>}
-        </div>
+        translation && (
+          <div className="mt-2 text-sm space-y-1 min-w-[200px]">
+            <div className="font-medium">{translation.translation}</div>
+            <div className="text-xs opacity-75">{translation.example_usage}</div>
+            <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
+          </div>
+        )
       )}
 
       <div 
