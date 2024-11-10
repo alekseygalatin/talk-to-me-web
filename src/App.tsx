@@ -195,6 +195,7 @@ function App() {
                           message={message}
                           theme={settings.theme}
                           onTranslate={onTranslate}
+                          language={settings.language}
                       />
                   ))
               )}

@@ -7,6 +7,7 @@ interface MessageBubbleProps {
   message: Message;
   theme: 'light' | 'dark';
   onTranslate: (word: string) => Promise<any>;
+  language: string;
 }
 
 interface WordPopupProps {
@@ -15,9 +16,10 @@ interface WordPopupProps {
   onClose: () => void;
   theme: 'light' | 'dark';
   onTranslate: (word: string) => Promise<any>;
+  language: string;
 }
 
-function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupProps) {
+function WordPopup({ word, position, onClose, theme, onTranslate, language }: WordPopupProps) {
   const isDark = theme === 'dark';
   const [translation, setTranslation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +106,7 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
             <button
               onClick={() => {
                 const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = 'sv-SE';
+                utterance.lang = language;
                 utterance.rate = 0.9;
                 window.speechSynthesis.speak(utterance);
               }}
@@ -138,7 +140,7 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
   );
 }
 
-export function MessageBubble({ message, theme, onTranslate }: MessageBubbleProps) {
+export function MessageBubble({ message, theme, onTranslate, language }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
     position: { x: number; y: number };
@@ -299,6 +301,7 @@ export function MessageBubble({ message, theme, onTranslate }: MessageBubbleProp
                 onClose={() => setSelectedWord(null)}
                 theme={theme}
                 onTranslate={onTranslate}
+                language={language}
             />
         )}
       </AnimatePresence>
