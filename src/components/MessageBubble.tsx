@@ -201,9 +201,12 @@ export function MessageBubble({ message, theme, onTranslate }: MessageBubbleProp
   const handleWordClick = (word: string, event: React.MouseEvent) => {
     event.stopPropagation();
     const clickRect = event.currentTarget.getBoundingClientRect();
+    
+    // Clean the word from any symbols
+    const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, '');
 
     setSelectedWord({
-      word,
+      word: cleanWord,
       position: {
         x: clickRect.left,
         y: clickRect.bottom + 10,
