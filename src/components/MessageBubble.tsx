@@ -68,7 +68,7 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
         position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        transform: 'translate(-50%, -130%)',
+        transform: 'translate(-50%, 0)',
       }}
     >
       <div className="flex gap-2 items-center">
@@ -120,7 +120,7 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
       )}
 
       <div 
-        className={`absolute bottom-0 left-1/2 w-2 h-2 transform translate-y-1/2 rotate-45 -translate-x-1/2 ${
+        className={`absolute -top-1 left-1/2 w-2 h-2 transform -translate-y-1/2 rotate-45 -translate-x-1/2 ${
           isDark ? 'bg-gray-800' : 'bg-white'
         }`}
       />
@@ -192,14 +192,13 @@ export function MessageBubble({ message, theme, onTranslate }: MessageBubbleProp
 
   const handleWordClick = (word: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    console.log('Word clicked:', word);
     const clickRect = event.currentTarget.getBoundingClientRect();
 
     setSelectedWord({
       word,
       position: {
         x: clickRect.left - 50,
-        y: clickRect.top - 50,
+        y: clickRect.bottom + 10,
       },
     });
   };
