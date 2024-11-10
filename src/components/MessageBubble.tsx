@@ -6,6 +6,7 @@ import type { Message } from '../types';
 interface MessageBubbleProps {
   message: Message;
   theme: 'light' | 'dark';
+  onTranslate: (word: string) => Promise<any>;
 }
 
 interface WordPopupProps {
@@ -13,11 +14,48 @@ interface WordPopupProps {
   position: { x: number; y: number };
   onClose: () => void;
   theme: 'light' | 'dark';
+  onTranslate: (word: string) => Promise<any>;
 }
 
-function WordPopup({ word, position, onClose, theme }: WordPopupProps) {
+function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupProps) {
   const isDark = theme === 'dark';
-  
+  const [translation, setTranslation] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const translateRequestRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (translateRequestRef.current) {
+      translateRequestRef.current.abort();
+    }
+
+    translateRequestRef.current = new AbortController();
+    
+    const loadTranslation = async () => {
+      if (!word) return;
+      
+      setIsLoading(true);
+      try {
+        const result = await onTranslate(word);
+        setTranslation(result);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Translation error:', error);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(loadTranslation, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (translateRequestRef.current) {
+        translateRequestRef.current.abort();
+      }
+    };
+  }, [word, onTranslate]);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -66,6 +104,17 @@ function WordPopup({ word, position, onClose, theme }: WordPopupProps) {
           </button>
         </div>
       </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center mt-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
+        </div>
+      ) : (
+        <div className="mt-1 text-sm">
+          {translation && <span>{translation}</span>}
+        </div>
+      )}
+
       <div 
         className={`absolute bottom-0 left-1/2 w-2 h-2 transform translate-y-1/2 rotate-45 -translate-x-1/2 ${
           isDark ? 'bg-gray-800' : 'bg-white'
@@ -75,7 +124,7 @@ function WordPopup({ word, position, onClose, theme }: WordPopupProps) {
   );
 }
 
-export function MessageBubble({ message, theme }: MessageBubbleProps) {
+export function MessageBubble({ message, theme, onTranslate }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
     position: { x: number; y: number };
@@ -139,13 +188,14 @@ export function MessageBubble({ message, theme }: MessageBubbleProps) {
 
   const handleWordClick = (word: string, event: React.MouseEvent) => {
     event.stopPropagation();
+    console.log('Word clicked:', word);
     const clickRect = event.currentTarget.getBoundingClientRect();
 
     setSelectedWord({
       word,
       position: {
         x: clickRect.left - 50,
-        y: clickRect.top - 50, // Adjust this value to control the vertical offset above the word
+        y: clickRect.top - 50,
       },
     });
   };
@@ -227,60 +277,13 @@ export function MessageBubble({ message, theme }: MessageBubbleProps) {
 
       <AnimatePresence>
         {selectedWord && (
-            <motion.div
-                initial={{opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className={`fixed z-50 px-4 py-2 rounded-lg shadow-lg ${
-              isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-            }`}
-            style={{
-              left: `${selectedWord.position.x}px`,
-              top: `${selectedWord.position.y}px`,
-              transform: 'translate(-50%, -130%)',
-            }}
-          >
-            <div className="flex gap-2 items-center">
-              <span className="font-medium">{selectedWord.word}</span>
-              <div className="flex gap-1">
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await navigator.clipboard.writeText(selectedWord.word);
-                    setSelectedWord(null);
-                  }}
-                  className={`text-sm px-2 py-1 rounded ${
-                    isDark 
-                      ? 'hover:bg-gray-700 text-gray-300' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}
-                  title="Copy word"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const utterance = new SpeechSynthesisUtterance(selectedWord.word);
-                    window.speechSynthesis.speak(utterance);
-                  }}
-                  className={`text-sm px-2 py-1 rounded ${
-                    isDark 
-                      ? 'hover:bg-gray-700 text-gray-300' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}
-                  title="Speak word"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div 
-              className={`absolute bottom-0 left-1/2 w-2 h-2 transform translate-y-1/2 rotate-45 -translate-x-1/2 ${
-                isDark ? 'bg-gray-800' : 'bg-white'
-              }`}
+            <WordPopup
+                word={selectedWord.word}
+                position={selectedWord.position}
+                onClose={() => setSelectedWord(null)}
+                theme={theme}
+                onTranslate={onTranslate}
             />
-          </motion.div>
         )}
       </AnimatePresence>
 

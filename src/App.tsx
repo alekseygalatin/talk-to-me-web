@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { MessageBubble } from './components/MessageBubble';
 import { ChatInput } from './components/ChatInput';
@@ -31,6 +31,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('idToken');
@@ -144,6 +145,16 @@ function App() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const onTranslate = useCallback(async (word: string) => {
+    const response = await axios.post(
+        'https://vv5jzb5zpnyvrmzbfhgt3k2q5q0sbmes.lambda-url.us-east-1.on.aws/process-text',
+        { text: word, sessionId: "1234" },
+        { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+    );
+    const data = JSON.parse(response.data);
+    return data;
+  }, []);
+
   return (
       <div className={`min-h-screen ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
         {loading ? (
@@ -182,6 +193,7 @@ function App() {
                           key={message.id}
                           message={message}
                           theme={settings.theme}
+                          onTranslate={onTranslate}
                       />
                   ))
               )}
