@@ -68,62 +68,67 @@ function WordPopup({ word, position, onClose, theme, onTranslate }: WordPopupPro
         position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        transform: 'translate(-50%, 0)',
+        transform: 'translate(calc(-50% + 10px), 0)',
       }}
     >
-      <div className="flex gap-2 items-center">
-        <span className="font-medium">{word}</span>
-        <div className="flex gap-1">
-          <button
-            onClick={async () => {
-              await navigator.clipboard.writeText(word);
-              onClose();
-            }}
-            className={`text-sm px-2 py-1 rounded ${
-              isDark 
-                ? 'hover:bg-gray-700 text-gray-300' 
-                : 'hover:bg-gray-100 text-gray-600'
-            }`}
-            title="Copy word"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => {
-              const utterance = new SpeechSynthesisUtterance(word);
-              window.speechSynthesis.speak(utterance);
-            }}
-            className={`text-sm px-2 py-1 rounded ${
-              isDark 
-                ? 'hover:bg-gray-700 text-gray-300' 
-                : 'hover:bg-gray-100 text-gray-600'
-            }`}
-            title="Speak word"
-          >
-            <Volume2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center mt-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
-        </div>
-      ) : (
-        translation && (
-          <div className="mt-2 text-sm space-y-1 min-w-[200px]">
-            <div className="font-medium">{translation.translation}</div>
-            <div className="text-xs opacity-75">{translation.example_usage}</div>
-            <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
-          </div>
-        )
-      )}
-
       <div 
-        className={`absolute -top-1 left-1/2 w-2 h-2 transform -translate-y-1/2 rotate-45 -translate-x-1/2 ${
+        className={`absolute -top-1 w-2 h-2 transform -translate-y-1/2 rotate-45 ${
           isDark ? 'bg-gray-800' : 'bg-white'
         }`}
+        style={{ 
+          left: '10px',
+        }}
       />
+      
+      <div className="relative z-10">
+        <div className="flex gap-2 items-center">
+          <span className="font-medium">{word}</span>
+          <div className="flex gap-1">
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(word);
+                onClose();
+              }}
+              className={`text-sm px-2 py-1 rounded ${
+                isDark 
+                  ? 'hover:bg-gray-700 text-gray-300' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Copy word"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                const utterance = new SpeechSynthesisUtterance(word);
+                window.speechSynthesis.speak(utterance);
+              }}
+              className={`text-sm px-2 py-1 rounded ${
+                isDark 
+                  ? 'hover:bg-gray-700 text-gray-300' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Speak word"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        
+        {isLoading ? (
+          <div className="flex justify-center mt-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
+          </div>
+        ) : (
+          translation && (
+            <div className="mt-2 text-sm space-y-1 min-w-[200px]">
+              <div className="font-medium">{translation.translation}</div>
+              <div className="text-xs opacity-75">{translation.example_usage}</div>
+              <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
+            </div>
+          )
+        )}
+      </div>
     </motion.div>
   );
 }
