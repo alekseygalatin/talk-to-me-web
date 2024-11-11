@@ -8,7 +8,7 @@ import type { Message, ChatState } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
-const redirectUri = 'http://localhost:5173/'; // Replace with your S3 URL
+const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with your S3 URL
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
@@ -166,13 +166,16 @@ function App() {
   }, [state.messages]);
 
   return (
-    <div className={`h-screen flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
+    <div 
+      className={`fixed inset-0 flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}
+      style={{ height: '100dvh' }}
+    >
       {loading ? (
         <p>Loading...</p>
       ) : token ? (
-        <div className="max-w-3xl mx-auto w-full flex flex-col h-full">
+        <div className="max-w-3xl mx-auto w-full flex flex-col h-full safe-area-inset-padding">
           {/* Fixed Header */}
-          <header className={`flex items-center justify-between p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm m-2 sm:m-4`}>
+          <header className={`flex items-center justify-between p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mx-2 sm:mx-4 mt-safe mb-2`}>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600 rounded-xl">
                 <MessageSquare className="w-6 h-6 text-white" />
@@ -194,7 +197,11 @@ function App() {
           </header>
 
           {/* Scrollable Chat Area */}
-          <div className="flex-1 overflow-y-auto mx-2 sm:mx-4" ref={chatContainerRef}>
+          <div 
+            className="flex-1 overflow-y-auto mx-2 sm:mx-4 overscroll-bounce" 
+            ref={chatContainerRef}
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             <div className="space-y-3 sm:space-y-4">
               {state.messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-gray-500">
@@ -216,7 +223,7 @@ function App() {
           </div>
 
           {/* Fixed Footer */}
-          <div className={`p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm m-2 sm:m-4`}>
+          <div className={`p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mx-2 sm:mx-4 mb-safe mt-2`}>
             <ChatInput
               onSendMessage={handleSendMessage}
               isProcessing={state.isProcessing}
