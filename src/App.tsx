@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { MessageBubble } from './components/MessageBubble';
 import { ChatInput } from './components/ChatInput';
@@ -32,6 +32,8 @@ function App() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('idToken');
@@ -157,6 +159,12 @@ function App() {
     return JSON.parse(response.data.Json);
   }, []);
 
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [state.messages]);
+
   return (
     <div className={`h-screen flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
       {loading ? (
@@ -186,7 +194,7 @@ function App() {
           </header>
 
           {/* Scrollable Chat Area */}
-          <div className="flex-1 overflow-y-auto mx-2 sm:mx-4">
+          <div className="flex-1 overflow-y-auto mx-2 sm:mx-4" ref={chatContainerRef}>
             <div className="space-y-3 sm:space-y-4">
               {state.messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-gray-500">
