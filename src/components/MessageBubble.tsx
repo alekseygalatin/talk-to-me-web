@@ -65,7 +65,7 @@ function WordPopup({ word, position, onClose, theme, onTranslate, language, toke
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`fixed z-50 px-4 py-2 rounded-lg shadow-lg ${
+      className={`fixed z-50 px-3 py-2 rounded-lg shadow-lg max-w-[90vw] sm:max-w-[300px] ${
         isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
       }`}
       style={{
@@ -246,50 +246,56 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
         onClick={() => setSelectedWord(null)}
       >
         <div
-            className={`relative max-w-[80%] rounded-2xl px-4 py-2 ${
-                message.isUser
-                    ? theme === 'dark'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-blue-500 text-white'
-                    : theme === 'dark'
-                        ? 'bg-gray-700 text-white'
-                        : 'bg-gray-100 text-gray-900'
+            className={`flex flex-col space-y-1 max-w-[85vw] sm:max-w-[75%] ${
+                message.isUser ? 'items-end ml-auto' : 'items-start'
             }`}
         >
-          {renderWords(message.text)}
-          {message.audioUrl && (
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                    onClick={toggleAudio}
-                    className="p-2 rounded-full hover:bg-black/10 transition-colors"
-                >
-                  {isPlaying ? (
-                      <Pause className="w-4 h-4"/>
-                  ) : (
-                      <Play className="w-4 h-4"/>
-                  )}
-                </button>
-                <audio
-                    ref={audioRef}
-                    src={message.audioUrl}
-                    onEnded={() => setIsPlaying(false)}
-                    className="hidden"
-                />
-                <div
-                    className="h-1.5 flex-1 bg-black/10 rounded-full cursor-pointer overflow-hidden"
-                    onClick={handleProgressBarClick}
-                >
-                  <motion.div
-                      className="h-full bg-black/20 rounded-full"
-                      style={{width: `${progress}%`}}
-                      transition={{type: "tween"}}
+          <div
+            className={`relative group px-3 py-2 rounded-2xl break-words ${
+              message.isUser
+                ? theme === 'dark'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-blue-500 text-white'
+                : theme === 'dark'
+                ? 'bg-gray-700 text-white'
+                : 'bg-white text-gray-800'
+            } ${message.isUser ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
+          >
+            {renderWords(message.text)}
+            {message.audioUrl && (
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                      onClick={toggleAudio}
+                      className="p-2 rounded-full hover:bg-black/10 transition-colors"
+                  >
+                    {isPlaying ? (
+                        <Pause className="w-4 h-4"/>
+                    ) : (
+                        <Play className="w-4 h-4"/>
+                    )}
+                  </button>
+                  <audio
+                      ref={audioRef}
+                      src={message.audioUrl}
+                      onEnded={() => setIsPlaying(false)}
+                      className="hidden"
                   />
+                  <div
+                      className="h-1.5 flex-1 bg-black/10 rounded-full cursor-pointer overflow-hidden"
+                      onClick={handleProgressBarClick}
+                  >
+                    <motion.div
+                        className="h-full bg-black/20 rounded-full"
+                        style={{width: `${progress}%`}}
+                        transition={{type: "tween"}}
+                    />
+                  </div>
                 </div>
-              </div>
-          )}
-          <span className="text-xs opacity-60 mt-1 block">
-          {new Date(message.timestamp).toLocaleTimeString()}
-        </span>
+            )}
+            <span className="text-xs opacity-60 mt-1 block">
+            {new Date(message.timestamp).toLocaleTimeString()}
+          </span>
+          </div>
         </div>
       </motion.div>
 
