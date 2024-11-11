@@ -8,7 +8,7 @@ import type { Message, ChatState } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
-const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with your S3 URL
+const redirectUri = 'https://talknlearn.com'; // Replace with your S3 URL
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
@@ -185,7 +185,7 @@ function App() {
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <h1 className={`text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                Talk To Me
+                Talk And Learn
               </h1>
             </div>
             <button
