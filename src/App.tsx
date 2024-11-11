@@ -175,7 +175,11 @@ function App() {
       ) : token ? (
         <div className="max-w-3xl mx-auto w-full flex flex-col h-full safe-area-inset-padding">
           {/* Fixed Header */}
-          <header className={`flex items-center justify-between p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mx-2 sm:mx-4 mt-safe mb-2`}>
+          <header className={`flex items-center justify-between p-2 sm:p-4 ${
+            settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } rounded-2xl shadow-sm mx-2 sm:mx-4 mt-safe mb-2`}
+          style={{ paddingTop: '1rem', paddingBottom: '1rem' }}
+          >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600 rounded-xl">
                 <MessageSquare className="w-6 h-6 text-white" />
@@ -198,7 +202,7 @@ function App() {
 
           {/* Scrollable Chat Area */}
           <div 
-            className="flex-1 overflow-y-auto mx-2 sm:mx-4 overscroll-bounce" 
+            className="flex-1 overflow-y-auto mx-2 sm:mx-4 overscroll-bounce py-2" 
             ref={chatContainerRef}
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
@@ -223,7 +227,11 @@ function App() {
           </div>
 
           {/* Fixed Footer */}
-          <div className={`p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mx-2 sm:mx-4 mb-safe mt-2`}>
+          <div className={`p-2 sm:p-4 ${
+            settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } rounded-2xl shadow-sm mx-2 sm:mx-4 mb-safe mt-2`}
+          style={{ paddingTop: '1rem', paddingBottom: '1rem' }}
+          >
             <ChatInput
               onSendMessage={handleSendMessage}
               isProcessing={state.isProcessing}

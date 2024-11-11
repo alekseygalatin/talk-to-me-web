@@ -106,18 +106,18 @@ export function ChatInput({
                     disabled={isProcessing || listening}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setIsTipsOpen(true)}
-                        className={`p-2.5 rounded-full ${
-                            isDark
-                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        } transition-colors`}
-                        aria-label="Show tips"
-                    >
-                        <Info className="w-5 h-5" />
-                    </button>
+                    {/*<button*/}
+                    {/*    type="button"*/}
+                    {/*    onClick={() => setIsTipsOpen(true)}*/}
+                    {/*    className={`p-2.5 rounded-full ${*/}
+                    {/*        isDark*/}
+                    {/*            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'*/}
+                    {/*            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'*/}
+                    {/*    } transition-colors`}*/}
+                    {/*    aria-label="Show tips"*/}
+                    {/*>*/}
+                    {/*    <Info className="w-5 h-5" />*/}
+                    {/*</button>*/}
                     {isMicrophoneAvailable ? (
                         <button
                             type="button"
