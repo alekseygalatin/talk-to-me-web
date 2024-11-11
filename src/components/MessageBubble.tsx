@@ -6,8 +6,9 @@ import type { Message } from '../types';
 interface MessageBubbleProps {
   message: Message;
   theme: 'light' | 'dark';
-  onTranslate: (word: string) => Promise<any>;
+  onTranslate: (word: string, token: string) => Promise<any>;
   language: string;
+  token: string | null;
 }
 
 interface WordPopupProps {
@@ -15,11 +16,12 @@ interface WordPopupProps {
   position: { x: number; y: number };
   onClose: () => void;
   theme: 'light' | 'dark';
-  onTranslate: (word: string) => Promise<any>;
+  onTranslate: (word: string, token: string) => Promise<any>;
   language: string;
+  token: string | null;
 }
 
-function WordPopup({ word, position, onClose, theme, onTranslate, language }: WordPopupProps) {
+function WordPopup({ word, position, onClose, theme, onTranslate, language, token }: WordPopupProps) {
   const isDark = theme === 'dark';
   const [translation, setTranslation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +39,7 @@ function WordPopup({ word, position, onClose, theme, onTranslate, language }: Wo
       
       setIsLoading(true);
       try {
-        const result = await onTranslate(word);
+        const result = await onTranslate(word, token!);
         setTranslation(result);
       } catch (error) {
         if (error.name !== 'AbortError') {
@@ -140,17 +142,15 @@ function WordPopup({ word, position, onClose, theme, onTranslate, language }: Wo
   );
 }
 
-export function MessageBubble({ message, theme, onTranslate, language }: MessageBubbleProps) {
+export function MessageBubble({ message, theme, onTranslate, language, token }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
     position: { x: number; y: number };
   } | null>(null);
   const messageRef = useRef<HTMLDivElement>(null);
-  const isDark = theme === 'dark';
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const progressInterval = useRef<number>();
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -302,6 +302,7 @@ export function MessageBubble({ message, theme, onTranslate, language }: Message
                 theme={theme}
                 onTranslate={onTranslate}
                 language={language}
+                token={token}
             />
         )}
       </AnimatePresence>

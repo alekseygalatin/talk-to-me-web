@@ -8,7 +8,7 @@ import type { Message, ChatState } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
-const redirectUri = 'http://localhost:5173/'; // Replace with your S3 URL
+const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with your S3 URL
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
@@ -145,7 +145,8 @@ function App() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const onTranslate = useCallback(async (word: string) => {
+  const onTranslate = useCallback(async (word: string, token: string) => {
+    console.log(token)
     const response = await axios.post(
         'https://vv5jzb5zpnyvrmzbfhgt3k2q5q0sbmes.lambda-url.us-east-1.on.aws/process-text',
         { text: word, sessionId: "1234" },
@@ -196,6 +197,7 @@ function App() {
                           theme={settings.theme}
                           onTranslate={onTranslate}
                           language={settings.language}
+                          token={token}
                       />
                   ))
               )}
