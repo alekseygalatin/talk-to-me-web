@@ -8,7 +8,7 @@ import type { Message, ChatState } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
-const redirectUri = 'https://d3u8od6g4wwl6c.cloudfront.net'; // Replace with your S3 URL
+const redirectUri = 'http://localhost:5173/'; // Replace with your S3 URL
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
@@ -158,70 +158,75 @@ function App() {
   }, []);
 
   return (
-      <div className={`min-h-screen ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
-        {loading ? (
-            <p>Loading...</p>
-        ) : token ? (
-          <div className="max-w-3xl mx-auto p-2 sm:p-4 h-screen flex flex-col">
-            <header className={`flex items-center justify-between p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mb-2 sm:mb-4`}>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-600 rounded-xl">
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </div>
-                <h1 className={`text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                  Talk To Me
-                </h1>
+    <div className={`h-screen flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
+      {loading ? (
+        <p>Loading...</p>
+      ) : token ? (
+        <div className="max-w-3xl mx-auto w-full flex flex-col h-full">
+          {/* Fixed Header */}
+          <header className={`flex items-center justify-between p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm m-2 sm:m-4`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-600 rounded-xl">
+                <MessageSquare className="w-6 h-6 text-white" />
               </div>
-              <button
-                  onClick={() => setIsSidebarOpen(true)}
-                  className={`p-2 rounded-lg transition-colors ${
-                      settings.theme === 'dark'
-                          ? 'hover:bg-gray-700 text-gray-300'
-                          : 'hover:bg-gray-100 text-gray-600'
-                  }`}
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            </header>
-  
-            <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 space-y-3 sm:space-y-4">
+              <h1 className={`text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                Talk To Me
+              </h1>
+            </div>
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className={`p-2 rounded-lg transition-colors ${
+                settings.theme === 'dark'
+                  ? 'hover:bg-gray-700 text-gray-300'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </header>
+
+          {/* Scrollable Chat Area */}
+          <div className="flex-1 overflow-y-auto mx-2 sm:mx-4">
+            <div className="space-y-3 sm:space-y-4">
               {state.messages.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    <p>Start a conversation by typing or using voice input!</p>
-                  </div>
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  <p>Start a conversation by typing or using voice input!</p>
+                </div>
               ) : (
-                  state.messages.map((message) => (
-                      <MessageBubble
-                          key={message.id}
-                          message={message}
-                          theme={settings.theme}
-                          onTranslate={onTranslate}
-                          language={settings.language}
-                          token={token}
-                      />
-                  ))
+                state.messages.map((message) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    theme={settings.theme}
+                    onTranslate={onTranslate}
+                    language={settings.language}
+                    token={token}
+                  />
+                ))
               )}
             </div>
-  
-            <div className={`p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm mt-2 sm:mt-4`}>
-              <ChatInput
-                  onSendMessage={handleSendMessage}
-                  isProcessing={state.isProcessing}
-                  theme={settings.theme}
-                  language={settings.language}
-              />
-            </div>
           </div>
-        ) : (
-            <p>Please log in to access the Voice Chat Assistant.</p>
-        )}
-        <Sidebar
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-            settings={settings}
-            onSettingsChange={handleSettingsChange}
-        />
-      </div>
+
+          {/* Fixed Footer */}
+          <div className={`p-2 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm m-2 sm:m-4`}>
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              isProcessing={state.isProcessing}
+              theme={settings.theme}
+              language={settings.language}
+            />
+          </div>
+        </div>
+      ) : (
+        <p>Please log in to access the Voice Chat Assistant.</p>
+      )}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        settings={settings}
+        onSettingsChange={handleSettingsChange}
+      />
+    </div>
   );
 }
 
