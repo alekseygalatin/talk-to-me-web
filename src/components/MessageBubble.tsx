@@ -27,7 +27,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
   ({ word, position, onClose, theme, onTranslate, language, token, style }, ref) => {
     const isDark = theme === 'dark';
     const [translation, setTranslation] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const translateRequestRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
@@ -40,6 +40,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
       const loadTranslation = async () => {
         if (!word) return;
 
+        setIsLoading(true);
         try {
           const result = await onTranslate(word, token!);
           setTranslation(result);
@@ -63,48 +64,74 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     }, [word, onTranslate]);
 
     return (
-      <AnimatePresence>
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`fixed z-50 px-3 py-2 rounded-lg shadow-lg max-w-[90vw] sm:max-w-[300px] ${
-            isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-          }`}
-          style={{
-            position: 'fixed',
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            transform: 'translate(calc(-50% + 10px), 0)',
-            width: '90vw',
-            maxWidth: '300px',
-            height: 'auto',
-            minHeight: '150px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
-            textAlign: 'center',
-            ...style,
-          }}
-        >
-          {isLoading ? (
-            <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #3498db', borderRadius: '50%', animation: 'spin 2s linear infinite' }} />
-          ) : (
-            <div style={{ overflowY: 'auto', padding: '10px', maxHeight: '100%', fontSize: '14px' }}>
-              <p style={{ margin: 0 }}>{translation?.translation}</p>
-              <p style={{ margin: 0 }}>{translation?.example_usage}</p>
-              <p style={{ margin: 0 }}>{translation?.translation_notes}</p>
-              <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-around' }}>
-                <button onClick={() => navigator.clipboard.writeText(word)}>Copy</button>
-                <button onClick={() => new Audio(`path/to/audio/${word}.mp3`).play()}>Play</button>
-              </div>
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className={`fixed z-50 px-3 py-2 rounded-lg shadow-lg max-w-[90vw] sm:max-w-[300px] ${
+          isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        }`}
+        style={{
+          position: 'fixed',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          transform: 'translate(calc(-50% + 10px), 0)',
+          ...style,
+        }}
+      >
+        <div className="relative z-10">
+          <div className="flex gap-2 items-center">
+            <span className="font-medium">{word}</span>
+            <div className="flex gap-1">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(word);
+                  onClose();
+                }}
+                className={`text-sm px-2 py-1 rounded ${
+                  isDark 
+                    ? 'hover:bg-gray-700 text-gray-300' 
+                    : 'hover:bg-gray-100 text-gray-600'
+                }`}
+                title="Copy word"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  const utterance = new SpeechSynthesisUtterance(word);
+                  utterance.lang = language;
+                  utterance.rate = 0.9;
+                  window.speechSynthesis.speak(utterance);
+                }}
+                className={`text-sm px-2 py-1 rounded ${
+                  isDark 
+                    ? 'hover:bg-gray-700 text-gray-300' 
+                    : 'hover:bg-gray-100 text-gray-600'
+                }`}
+                title="Speak word"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
             </div>
+          </div>
+          
+          {isLoading ? (
+            <div className="flex justify-center mt-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
+            </div>
+          ) : (
+            translation && (
+              <div className="mt-2 text-sm space-y-1 min-w-[200px]">
+                <div className="font-medium">{translation.translation}</div>
+                <div className="text-xs opacity-75">{translation.example_usage}</div>
+                <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
+              </div>
+            )
           )}
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      </motion.div>
     );
   }
 );
