@@ -8,6 +8,7 @@ import { SettingsSidebar } from '../components/SettingsSidebar';
 import { ArrowLeft, Settings, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { withAuth } from '../components/withAuth';
+import '../chat.css';
 
 interface Message {
   id: string;
