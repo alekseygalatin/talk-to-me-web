@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Copy, Volume2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
+import React, { forwardRef } from 'react';
 
 interface MessageBubbleProps {
   message: Message;
@@ -19,128 +20,126 @@ interface WordPopupProps {
   onTranslate: (word: string, token: string) => Promise<any>;
   language: string;
   token: string | null;
+  style?: React.CSSProperties;
 }
 
-function WordPopup({ word, position, onClose, theme, onTranslate, language, token }: WordPopupProps) {
-  const isDark = theme === 'dark';
-  const [translation, setTranslation] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const translateRequestRef = useRef<AbortController | null>(null);
+const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
+  ({ word, position, onClose, theme, onTranslate, language, token, style }, ref) => {
+    const isDark = theme === 'dark';
+    const [translation, setTranslation] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const translateRequestRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (translateRequestRef.current) {
-      translateRequestRef.current.abort();
-    }
-
-    translateRequestRef.current = new AbortController();
-    
-    const loadTranslation = async () => {
-      if (!word) return;
-      
-      setIsLoading(true);
-      try {
-        const result = await onTranslate(word, token!);
-        setTranslation(result);
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error('Translation error:', error);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const timeoutId = setTimeout(loadTranslation, 300);
-
-    return () => {
-      clearTimeout(timeoutId);
+    useEffect(() => {
       if (translateRequestRef.current) {
         translateRequestRef.current.abort();
       }
-    };
-  }, [word, onTranslate]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className={`fixed z-50 px-3 py-2 rounded-lg shadow-lg max-w-[90vw] sm:max-w-[300px] ${
-        isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-      }`}
-      style={{
-        position: 'fixed',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: 'translate(calc(-50% + 10px), 0)',
-      }}
-    >
-      <div 
-        className="absolute -top-2"
-        style={{ 
-          left: '10px',
-          width: 0,
-          height: 0,
-          borderLeft: '8px solid transparent',
-          borderRight: '8px solid transparent',
-          borderBottom: `8px solid ${isDark ? '#1f2937' : '#ffffff'}`,
-        }}
-      />
+      translateRequestRef.current = new AbortController();
       
-      <div className="relative z-10">
-        <div className="flex gap-2 items-center">
-          <span className="font-medium">{word}</span>
-          <div className="flex gap-1">
-            <button
-              onClick={async () => {
-                await navigator.clipboard.writeText(word);
-                onClose();
-              }}
-              className={`text-sm px-2 py-1 rounded ${
-                isDark 
-                  ? 'hover:bg-gray-700 text-gray-300' 
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-              title="Copy word"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => {
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = language;
-                utterance.rate = 0.9;
-                window.speechSynthesis.speak(utterance);
-              }}
-              className={`text-sm px-2 py-1 rounded ${
-                isDark 
-                  ? 'hover:bg-gray-700 text-gray-300' 
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-              title="Speak word"
-            >
-              <Volume2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+      const loadTranslation = async () => {
+        if (!word) return;
         
-        {isLoading ? (
-          <div className="flex justify-center mt-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
-          </div>
-        ) : (
-          translation && (
-            <div className="mt-2 text-sm space-y-1 min-w-[200px]">
-              <div className="font-medium">{translation.translation}</div>
-              <div className="text-xs opacity-75">{translation.example_usage}</div>
-              <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
+        setIsLoading(true);
+        try {
+          const result = await onTranslate(word, token!);
+          setTranslation(result);
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            console.error('Translation error:', error);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      const timeoutId = setTimeout(loadTranslation, 300);
+
+      return () => {
+        clearTimeout(timeoutId);
+        if (translateRequestRef.current) {
+          translateRequestRef.current.abort();
+        }
+      };
+    }, [word, onTranslate]);
+
+    return (
+      <AnimatePresence>
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className={`fixed z-50 px-3 py-2 rounded-lg shadow-lg max-w-[90vw] sm:max-w-[300px] ${
+            isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+          style={{
+            position: 'fixed',
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            transform: 'translate(calc(-50% + 10px), 0)',
+            ...style,
+          }}
+        >
+          <div className="relative z-10">
+            <div className="flex gap-2 items-center">
+              <span className="font-medium">{word}</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(word);
+                    onClose();
+                  }}
+                  className={`text-sm px-2 py-1 rounded ${
+                    isDark 
+                      ? 'hover:bg-gray-700 text-gray-300' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Copy word"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    const utterance = new SpeechSynthesisUtterance(word);
+                    utterance.lang = language;
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                  }}
+                  className={`text-sm px-2 py-1 rounded ${
+                    isDark 
+                      ? 'hover:bg-gray-700 text-gray-300' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Speak word"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          )
-        )}
-      </div>
-    </motion.div>
-  );
-}
+            
+            {isLoading ? (
+              <div className="flex justify-center mt-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
+              </div>
+            ) : (
+              translation && (
+                <div className="mt-2 text-sm space-y-1 min-w-[200px]">
+                  <div className="font-medium">{translation.translation}</div>
+                  <div className="text-xs opacity-75">{translation.example_usage}</div>
+                  <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
+                </div>
+              )
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+);
+
+export default WordPopup;
 
 export function MessageBubble({ message, theme, onTranslate, language, token }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
@@ -151,6 +150,8 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -188,6 +189,53 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
       };
     }
   }, []);
+
+  useEffect(() => {
+    const adjustPopupPosition = () => {
+      if (popupRef.current && selectedWord) {
+        const rect = popupRef.current.getBoundingClientRect();
+        const newStyle: React.CSSProperties = {};
+
+        // Calculate initial position
+        let left = selectedWord.position.x - rect.width / 2; // Center horizontally
+        let top = selectedWord.position.y + 10; // Slightly below the word
+
+        // Adjust horizontal position
+        if (left + rect.width > window.innerWidth) {
+          left = window.innerWidth - rect.width - 10; // 10px padding
+        } else if (left < 0) {
+          left = 10; // 10px padding from the left
+        }
+
+        // Adjust vertical position
+        if (top + rect.height > window.innerHeight) {
+          top = selectedWord.position.y - rect.height - 10; // 10px padding
+        } else if (top < 0) {
+          top = 10; // 10px padding from the top
+        }
+
+        newStyle.left = left;
+        newStyle.top = top;
+
+        setPopupStyle(newStyle);
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(adjustPopupPosition);
+
+    if (popupRef.current) {
+      resizeObserver.observe(popupRef.current);
+    }
+
+    window.addEventListener('resize', adjustPopupPosition);
+
+    return () => {
+      if (popupRef.current) {
+        resizeObserver.unobserve(popupRef.current);
+      }
+      window.removeEventListener('resize', adjustPopupPosition);
+    };
+  }, [selectedWord]);
 
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (audioRef.current) {
@@ -302,6 +350,8 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
       <AnimatePresence>
         {selectedWord && (
             <WordPopup
+                ref={popupRef}
+                style={popupStyle}
                 word={selectedWord.word}
                 position={selectedWord.position}
                 onClose={() => setSelectedWord(null)}
