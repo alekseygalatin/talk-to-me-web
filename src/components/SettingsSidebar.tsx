@@ -4,13 +4,15 @@ import { X } from 'lucide-react';
 interface Settings {
   theme: 'light' | 'dark';
   language: string;
+  volume: number;
+  microphoneSensitivity: number;
 }
 
 interface SettingsSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   settings: Settings;
-  onSettingsChange: (settings: Settings) => void;
+  onSettingsChange: (key: keyof Settings, value: any) => void;
 }
 
 export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }: SettingsSidebarProps) {
@@ -60,7 +62,7 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
                 </label>
                 <select
                   value={settings.theme}
-                  onChange={(e) => onSettingsChange({ ...settings, theme: e.target.value as 'light' | 'dark' })}
+                  onChange={(e) => onSettingsChange('theme', e.target.value as 'light' | 'dark')}
                   className={`w-full p-2 rounded-lg border ${
                     settings.theme === 'dark'
                       ? 'bg-gray-700 border-gray-600 text-white'
@@ -80,7 +82,7 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
                 </label>
                 <select
                   value={settings.language}
-                  onChange={(e) => onSettingsChange({ ...settings, language: e.target.value })}
+                  onChange={(e) => onSettingsChange('language', e.target.value)}
                   className={`w-full p-2 rounded-lg border ${
                     settings.theme === 'dark'
                       ? 'bg-gray-700 border-gray-600 text-white'
@@ -91,6 +93,38 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
                   <option value="en-US">English</option>
                   <option value="es-ES">Spanish</option>
                 </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  settings.theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Volume
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.volume}
+                  onChange={(e) => onSettingsChange('volume', Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  settings.theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Microphone Sensitivity
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.microphoneSensitivity}
+                  onChange={(e) => onSettingsChange('microphoneSensitivity', Number(e.target.value))}
+                  className="w-full"
+                />
               </div>
             </div>
           </motion.div>

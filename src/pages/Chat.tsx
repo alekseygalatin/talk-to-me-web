@@ -30,11 +30,14 @@ export function Chat() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
-  const [settings, setSettings] = useState<Settings>({
-    theme: 'light',
-    language: 'sv-SE',
-    volume: 80,
-    microphoneSensitivity: 100,
+  const [settings, setSettings] = useState<Settings>(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
+    return {
+      theme: savedTheme,
+      language: 'sv-SE',
+      volume: 80,
+      microphoneSensitivity: 100,
+    };
   });
 
   useEffect(() => {
@@ -42,6 +45,11 @@ export function Chat() {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', settings.theme === 'dark');
+    localStorage.setItem('theme', settings.theme);
+  }, [settings.theme]);
 
   const handleSendMessage = async (text: string) => {
     if (!token) return;
@@ -103,7 +111,7 @@ export function Chat() {
     <div className={`h-screen flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
       <div className="max-w-3xl mx-auto w-full flex flex-col h-full">
         {/* Header */}
-        <header className={`flex items-center justify-between p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+        <header className={`flex items-center justify-between p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-b-lg`}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/select-partner')}
@@ -149,7 +157,7 @@ export function Chat() {
         </div>
 
         {/* Chat Input */}
-        <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-t dark:border-gray-700`}>
+        <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-t dark:border-gray-700 shadow-md rounded-t-lg`}>
           <ChatInput
             onSendMessage={handleSendMessage}
             isProcessing={isProcessing}
