@@ -54,3 +54,118 @@ body {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+@media (max-width: 600px) {
+  html, body {
+    position: static;
+    overflow: auto;
+    height: auto;
+  }
+
+  .popup {
+    width: 95vw; /* Slightly larger width for very small screens */
+    padding: 5px; /* Adjust padding for smaller screens */
+  }
+
+  .popup p {
+    font-size: 12px; /* Smaller font size for readability */
+  }
+
+  .popup button {
+    font-size: 12px; /* Adjust button font size */
+  }
+
+  .main-content, .partners-grid {
+    overflow-y: auto; /* Allow vertical scrolling */
+    height: auto; /* Adjust height to allow content to dictate size */
+  }
+}
+
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.container {
+  width: 100%;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Main Page */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+/* Partners Page */
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .partners-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Login Page */
+.login-form {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.login-form input, .login-form button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .login-form {
+    padding: 10px;
+  }
+
+  .login-form input, .login-form button {
+    font-size: 14px;
+  }
+}
+
+/* Additional Mobile Styles */
+@media (max-width: 600px) {
+  .container {
+    padding: 10px;
+  }
+
+  .main-content, .partners-grid, .login-form {
+    padding: 10px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 8px;
+  }
+}
