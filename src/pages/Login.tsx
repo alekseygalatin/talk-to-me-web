@@ -47,6 +47,28 @@ export function Login() {
         setIsLoading(false);
         console.error('Login error:', err);
       },
+      newPasswordRequired: (userAttributes, requiredAttributes) => {
+        // Prompt user for new password
+        const newPassword = prompt('Please enter a new password:');
+        if (newPassword) {
+          cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
+            onSuccess: (session) => {
+              const token = session.getIdToken().getJwtToken();
+              localStorage.setItem('idToken', token);
+              setIsLoading(false);
+              navigate('/select-partner');
+            },
+            onFailure: (err) => {
+              setError(err.message || 'An error occurred during password change');
+              setIsLoading(false);
+              console.error('Password change error:', err);
+            },
+          });
+        } else {
+          setError('Password change was cancelled');
+          setIsLoading(false);
+        }
+      },
     });
   };
 
