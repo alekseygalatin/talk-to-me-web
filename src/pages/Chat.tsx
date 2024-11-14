@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -6,6 +7,7 @@ import { ChatInput } from '../components/ChatInput';
 import { SettingsSidebar } from '../components/SettingsSidebar';
 import { ArrowLeft, Settings, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { withAuth } from '../components/withAuth';
 
 interface Message {
   id: string;
@@ -22,7 +24,7 @@ interface Settings {
   microphoneSensitivity: number;
 }
 
-export function Chat() {
+function Chat() {
   const { partnerId } = useParams();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -176,4 +178,6 @@ export function Chat() {
       </div>
     </div>
   );
-} 
+}
+
+export default withAuth(Chat); 

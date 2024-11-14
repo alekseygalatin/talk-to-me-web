@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
-import { SelectPartner } from './pages/SelectPartner';
-import { Chat } from './pages/Chat'; // Your existing chat component
+import { default as SelectPartner } from './pages/SelectPartner';
+import { default as Chat } from './pages/Chat'; // Your existing chat component
 
 function App() {
   return (

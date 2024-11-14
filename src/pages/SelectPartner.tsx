@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { User, BookOpen, Coffee, Briefcase } from 'lucide-react';
+import { withAuth } from '../components/withAuth';
 
 interface Partner {
   id: string;
@@ -34,7 +35,7 @@ const partners: Partner[] = [
   },
 ];
 
-export function SelectPartner() {
+function SelectPartner() {
   const navigate = useNavigate();
 
   const handleSelectPartner = (partnerId: string) => {
@@ -89,4 +90,6 @@ export function SelectPartner() {
       </div>
     </div>
   );
-} 
+}
+
+export default withAuth(SelectPartner);
