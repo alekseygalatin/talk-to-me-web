@@ -38,7 +38,7 @@ export function Login() {
     cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: (session) => {
         const token = session.getIdToken().getJwtToken();
-        localStorage.setItem('token', token);
+        localStorage.setItem('idToken', token);
         setIsLoading(false);
         navigate('/select-partner');
       },
