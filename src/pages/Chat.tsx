@@ -31,7 +31,7 @@ export function Chat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
   const [settings, setSettings] = useState<Settings>(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' ?? 'dark'; // Default to dark theme
     return {
       theme: savedTheme,
       language: 'sv-SE',
@@ -157,7 +157,7 @@ export function Chat() {
         </div>
 
         {/* Chat Input */}
-        <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-t dark:border-gray-700 shadow-md rounded-t-lg`}>
+        <div className={`p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} ${settings.theme === 'light' ? '' : 'border-t dark:border-gray-700'} shadow-md rounded-t-lg`}>
           <ChatInput
             onSendMessage={handleSendMessage}
             isProcessing={isProcessing}
