@@ -1,7 +1,8 @@
-import { Mic, Send, Loader2, MicOff, Info } from 'lucide-react';
+import { Mic, Send, Loader2, MicOff, Info, Lightbulb } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { TipsDialog } from './TipsDialog';
+import { IdeaDialog } from './IdeaDialog';
 
 interface ChatInputProps {
     onSendMessage: (text: string) => void;
@@ -18,6 +19,7 @@ export function ChatInput({
                           }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [isTipsOpen, setIsTipsOpen] = useState(false);
+    const [isIdeaOpen, setIsIdeaOpen] = useState(false);
     const {
         transcript,
         listening,
@@ -90,6 +92,20 @@ export function ChatInput({
     return (
         <>
             <form onSubmit={handleSubmit} className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <button
+                        type="button"
+                        onClick={() => setIsIdeaOpen(true)}
+                        className={`p-2.5 rounded-full ${
+                            isDark
+                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        } transition-colors`}
+                        aria-label="Select idea"
+                    >
+                        <Lightbulb className="w-5 h-5" />
+                    </button>
+                </div>
                 <textarea
                     value={listening ? transcript : message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -99,7 +115,7 @@ export function ChatInput({
                         isDark
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400'
                             : 'border-gray-200 bg-white text-gray-900'
-                    } pl-4 pr-32 py-3 focus:outline-none focus:border-blue-500 resize-none min-h-[52px] ${
+                    } pl-16 pr-32 py-3 focus:outline-none focus:border-blue-500 resize-none min-h-[52px] ${
                         listening ? 'animate-pulse' : ''
                     }`}
                     rows={1}
@@ -169,6 +185,15 @@ export function ChatInput({
                     </button>
                 </div>
             </form>
+            <IdeaDialog
+                isOpen={isIdeaOpen}
+                onClose={() => setIsIdeaOpen(false)}
+                onSelect={(text) => {
+                    setMessage(text);
+                    setIsIdeaOpen(false);
+                }}
+                theme={theme}
+            />
             <TipsDialog
                 isOpen={isTipsOpen}
                 onClose={() => setIsTipsOpen(false)}

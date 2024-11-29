@@ -8,7 +8,7 @@ import type { Message, ChatState } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 const clientId = '7o8tqlt2ucihqsbtthfopc9d4p';
-const redirectUri = 'https://talknlearn.com'; // Replace with your S3 URL
+const redirectUri = 'http://localhost:5173/'; // Replace with your S3 URL
 const tokenUrl = 'https://talk-to-me.auth.us-east-1.amazoncognito.com/oauth2/token';
 
 interface JwtPayload {
