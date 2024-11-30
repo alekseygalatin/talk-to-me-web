@@ -14,17 +14,15 @@ interface MessageBubbleProps {
 
 interface WordPopupProps {
   word: string;
-  position: { x: number; y: number };
   onClose: () => void;
   theme: 'light' | 'dark';
   onTranslate: (word: string, token: string) => Promise<any>;
   language: string;
   token: string | null;
-  style?: React.CSSProperties;
 }
 
 const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
-  ({ word, position, onClose, theme, onTranslate, language, token, style }, ref) => {
+  ({ word, onClose, theme, onTranslate, language, token }, ref) => {
     const isDark = theme === 'dark';
     const [translation, setTranslation] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -64,74 +62,132 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     }, [word, onTranslate]);
 
     return (
-      <motion.div
-        ref={ref}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className={`fixed z-50 px-3 py-2 rounded-lg shadow-lg max-w-[90vw] sm:max-w-[300px] ${
-          isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-        }`}
-        style={{
-          position: 'fixed',
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          transform: 'translate(calc(-50% + 10px), 0)',
-          ...style,
-        }}
-      >
-        <div className="relative z-10">
-          <div className="flex gap-2 items-center">
-            <span className="font-medium">{word}</span>
-            <div className="flex gap-1">
-              <button
-                onClick={async () => {
-                  await navigator.clipboard.writeText(word);
-                  onClose();
-                }}
-                className={`text-sm px-2 py-1 rounded ${
-                  isDark 
-                    ? 'hover:bg-gray-700 text-gray-300' 
-                    : 'hover:bg-gray-100 text-gray-600'
-                }`}
-                title="Copy word"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => {
-                  const utterance = new SpeechSynthesisUtterance(word);
-                  utterance.lang = language;
-                  utterance.rate = 0.9;
-                  window.speechSynthesis.speak(utterance);
-                }}
-                className={`text-sm px-2 py-1 rounded ${
-                  isDark 
-                    ? 'hover:bg-gray-700 text-gray-300' 
-                    : 'hover:bg-gray-100 text-gray-600'
-                }`}
-                title="Speak word"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className={`relative rounded-2xl shadow-2xl
+            w-[95vw] sm:w-[550px] md:w-[600px] lg:w-[650px]
+            ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}
+            backdrop-blur-lg backdrop-filter
+            border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
+        >
+          <button
+            onClick={onClose}
+            className={`absolute right-4 top-4 p-2 rounded-full transition-colors
+              ${isDark 
+                ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' 
+                : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+              }
+              focus:outline-none focus:ring-2 focus:ring-offset-2 
+              ${isDark ? 'focus:ring-gray-700' : 'focus:ring-gray-300'}
+            `}
+            aria-label="Close popup"
+          >
+            <svg 
+              className="w-5 h-5" 
+              fill="none" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth="2" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+
+          <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-2xl font-semibold">{word}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(word);
+                      onClose();
+                    }}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDark 
+                        ? 'hover:bg-gray-700 text-gray-300' 
+                        : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                    title="Copy word"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const utterance = new SpeechSynthesisUtterance(word);
+                      utterance.lang = language;
+                      utterance.rate = 0.9;
+                      window.speechSynthesis.speak(utterance);
+                    }}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDark 
+                        ? 'hover:bg-gray-700 text-gray-300' 
+                        : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                    title="Speak word"
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-          
-          {isLoading ? (
-            <div className="flex justify-center mt-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"/>
-            </div>
-          ) : (
-            translation && (
-              <div className="mt-2 text-sm space-y-1 min-w-[200px]">
-                <div className="font-medium">{translation.translation}</div>
-                <div className="text-xs opacity-75">{translation.example_usage}</div>
-                <div className="text-xs italic opacity-75">{translation.translation_notes}</div>
+
+          <div className="p-6">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-3 
+                  border-t-blue-500 border-r-blue-500 border-b-transparent border-l-transparent"/>
               </div>
-            )
-          )}
-        </div>
-      </motion.div>
+            ) : (
+              translation && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className={`text-sm font-medium mb-2 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Translation
+                    </h3>
+                    <p className="text-xl font-medium">{translation.translation}</p>
+                  </div>
+
+                  <div>
+                    <h3 className={`text-sm font-medium mb-2 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Example
+                    </h3>
+                    <p className={`p-4 rounded-lg ${
+                      isDark ? 'bg-gray-700/50' : 'bg-gray-50'
+                    }`}>
+                      {translation.example_usage}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className={`text-sm font-medium mb-2 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Notes
+                    </h3>
+                    <p className={`italic ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {translation.translation_notes}
+                    </p>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        </motion.div>
+      </div>
     );
   }
 );
@@ -348,9 +404,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
         {selectedWord && (
             <WordPopup
                 ref={popupRef}
-                style={popupStyle}
                 word={selectedWord.word}
-                position={selectedWord.position}
                 onClose={() => setSelectedWord(null)}
                 theme={theme}
                 onTranslate={onTranslate}
