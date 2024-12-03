@@ -69,18 +69,19 @@ function Chat() {
 
     try {
       const response = await axios.post(
-        'https://2inmmpsyon2mm664xfotrr66cy0sajtd.lambda-url.us-east-1.on.aws/process-text',
-        { text: text, sessionId: "1234" },
+        'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/process-text',
+          text,
         { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
       );
-
-      const audioBytes = Uint8Array.from(atob(response.data.Audio), c => c.charCodeAt(0));
+      
+      let responseObject = JSON.parse(response.data.body);
+      const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
       const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
       const responseAudioURL = URL.createObjectURL(responseWavBlob);
 
       const botMessage: Message = {
         id: Date.now().toString(),
-        text: response.data.Text,
+        text: responseObject.Text,
         isUser: false,
         timestamp: new Date(),
         audioUrl: responseAudioURL,
@@ -102,12 +103,13 @@ function Chat() {
     if (!token) return;
 
     const response = await axios.post(
-      'https://vv5jzb5zpnyvrmzbfhgt3k2q5q0sbmes.lambda-url.us-east-1.on.aws/process-text',
-      { text: word, sessionId: "1234" },
+      'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/translate-word',
+        word,
       { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
     );
-
-    return JSON.parse(response.data.Json);
+    
+    let responseObject = JSON.parse(response.data.body);
+    return JSON.parse(responseObject.Text);
   }, [token]);
 
   return (
