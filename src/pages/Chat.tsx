@@ -264,6 +264,7 @@ function Chat() {
               onSendMessage={handleSendMessage}
               isProcessing={isProcessing}
               theme={settings.theme}
+              language={settings.language}
             />
           </div>
         </div>
