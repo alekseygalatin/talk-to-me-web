@@ -42,10 +42,16 @@ function Chat() {
     };
   });
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -184,20 +190,19 @@ function Chat() {
     <div 
       className={`flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}
       style={{ 
-        minHeight: '100vh', // Ensure full viewport height
+        minHeight: '100vh',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)'
       }}
     >
       <div className="flex flex-col h-full w-full max-w-3xl mx-auto relative">
-        {/* Header - Fixed with safe area handling */}
         <header 
           className={`fixed top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-4 ${
             settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'
           } shadow-md z-20`}
           style={{
             marginTop: 'env(safe-area-inset-top)',
-            maxWidth: '48rem', // 3xl = 48rem
+            maxWidth: '48rem',
             margin: '0 auto'
           }}
         >
@@ -221,41 +226,36 @@ function Chat() {
           </button>
         </header>
 
-        {/* Spacer for fixed header */}
-        <div className="h-[72px] sm:h-[80px]" /> {/* Adjust height to match header */}
+        <div className="h-[72px] sm:h-[80px]" />
 
-        {/* Chat container */}
-        <div 
-          ref={chatContainerRef}
-          className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 space-y-4 overscroll-contain"
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: '80px' // Space for input
-          }}
-        >
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              theme={settings.theme}
-              onTranslate={onTranslate}
-            />
-          ))}
-          {isProcessing && (
-            <div className={`flex justify-center py-2 ${settings.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-              <MessageSquare className="w-5 h-5 animate-bounce" />
-            </div>
-          )}
+        <div style={styles.chatWrapper}>
+          <div style={styles.chatContainer}>
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                theme={settings.theme}
+                onTranslate={onTranslate}
+                language={settings.language}
+                token={token}
+              />
+            ))}
+            {isProcessing && (
+              <div className={`flex justify-center py-2 ${settings.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                <MessageSquare className="w-5 h-5 animate-bounce" />
+              </div>
+            )}
+            <div ref={messagesEndRef} style={styles.bottomSpacer} />
+          </div>
         </div>
 
-        {/* Input area - Fixed position */}
         <div 
           className={`fixed bottom-0 left-0 right-0 border-t ${
             settings.theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
           } z-20`}
           style={{
             paddingBottom: 'env(safe-area-inset-bottom)',
-            maxWidth: '48rem', // 3xl = 48rem
+            maxWidth: '48rem',
             margin: '0 auto'
           }}
         >
@@ -269,7 +269,6 @@ function Chat() {
           </div>
         </div>
 
-        {/* Settings sidebar */}
         <SettingsSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
@@ -286,5 +285,21 @@ function Chat() {
     </div>
   );
 }
+
+const styles = {
+  chatWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh', // Full viewport height
+  },
+  chatContainer: {
+    flex: 1, // Allows the chat container to grow and shrink
+    overflowY: 'auto',
+    padding: '10px', // Optional: for spacing
+  },
+  bottomSpacer: {
+    height: '80px', // Increased height for more spacing
+  },
+};
 
 export default withAuth(Chat); 
