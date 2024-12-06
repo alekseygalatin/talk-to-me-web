@@ -181,10 +181,26 @@ function Chat() {
   }, [token]);
 
   return (
-    <div className={`h-screen flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
-      <div className="max-w-3xl mx-auto w-full flex flex-col h-full relative">
-        {/* Header - made more compact on mobile */}
-        <header className={`flex items-center justify-between p-3 sm:p-4 ${settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-b-lg sticky top-0 z-10`}>
+    <div 
+      className={`flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}
+      style={{ 
+        minHeight: '100vh', // Ensure full viewport height
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}
+    >
+      <div className="flex flex-col h-full w-full max-w-3xl mx-auto relative">
+        {/* Header - Fixed with safe area handling */}
+        <header 
+          className={`fixed top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-4 ${
+            settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } shadow-md z-20`}
+          style={{
+            marginTop: 'env(safe-area-inset-top)',
+            maxWidth: '48rem', // 3xl = 48rem
+            margin: '0 auto'
+          }}
+        >
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => navigate('/select-partner')}
@@ -205,13 +221,16 @@ function Chat() {
           </button>
         </header>
 
-        {/* Chat container - with safe areas and better scrolling */}
+        {/* Spacer for fixed header */}
+        <div className="h-[72px] sm:h-[80px]" /> {/* Adjust height to match header */}
+
+        {/* Chat container */}
         <div 
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 space-y-4 overscroll-contain"
           style={{
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            paddingTop: 'env(safe-area-inset-top, 0px)'
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: '80px' // Space for input
           }}
         >
           {messages.map((message) => (
@@ -229,12 +248,18 @@ function Chat() {
           )}
         </div>
 
-        {/* Input area - fixed at bottom with safe area spacing */}
+        {/* Input area - Fixed position */}
         <div 
-          className={`border-t ${settings.theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} sticky bottom-0 z-10`}
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          className={`fixed bottom-0 left-0 right-0 border-t ${
+            settings.theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+          } z-20`}
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            maxWidth: '48rem', // 3xl = 48rem
+            margin: '0 auto'
+          }}
         >
-          <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3">
+          <div className="px-3 sm:px-4 py-3">
             <ChatInput
               onSendMessage={handleSendMessage}
               isProcessing={isProcessing}
@@ -243,7 +268,7 @@ function Chat() {
           </div>
         </div>
 
-        {/* Settings sidebar - improved mobile handling */}
+        {/* Settings sidebar */}
         <SettingsSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
@@ -251,6 +276,10 @@ function Chat() {
           onSettingsChange={handleSettingsChange}
           theme={settings.theme}
           className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md"
+          style={{ 
+            top: 'env(safe-area-inset-top)',
+            bottom: 'env(safe-area-inset-bottom)'
+          }}
         />
       </div>
     </div>
