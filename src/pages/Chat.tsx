@@ -1,4 +1,3 @@
-import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -54,6 +53,63 @@ function Chat() {
     localStorage.setItem('theme', settings.theme);
   }, [settings.theme]);
 
+  useEffect(() => {
+    const fetchStory = async () => {
+      if (partnerId === "4") {
+        // Check for token first
+        const token = localStorage.getItem('idToken');
+        if (!token) {
+          console.error('No authentication token found');
+          return;
+        }
+
+        // Prevent duplicate calls
+        if (messages.length > 0) return;
+        
+        setIsProcessing(true);
+        try {
+          const response = await axios.post(
+            'http://localhost:5227/api/Transcribe/get-story',
+            {},  // empty body for POST request
+            { 
+              headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': token 
+              } 
+            }
+          );
+
+          let responseObject = JSON.parse(response.data.body);
+          const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
+          const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
+          const responseAudioURL = URL.createObjectURL(responseWavBlob);
+
+          const botMessage: Message = {
+            id: Date.now().toString(),
+            text: responseObject.Text,
+            isUser: false,
+            timestamp: new Date(),
+            audioUrl: responseAudioURL,
+          };
+
+          setMessages(prevMessages => {
+            // Only add if not already present
+            if (prevMessages.length === 0) {
+              return [botMessage];
+            }
+            return prevMessages;
+          });
+        } catch (error) {
+          console.error('Error fetching story:', error);
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
+   
+    fetchStory();
+  }, [partnerId, messages.length]);
+
   const handleSendMessage = async (text: string) => {
     if (!token) return;
 
@@ -68,11 +124,23 @@ function Chat() {
     setIsProcessing(true);
 
     try {
-      const response = await axios.post(
-        'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/process-text',
-          text,
-        { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-      );
+      let response: any;
+      if (partnerId === "4") { //get-story-feedback
+        response = await axios.post(
+            'http://localhost:5227/api/Transcribe/get-story-feedback',
+            {
+              originText: messages[0].text,
+              retailText: text
+            },
+            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+        );
+      }else {
+        response = await axios.post(
+            'http://localhost:5227/api/Transcribe/process-text',
+            text,
+            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+        );
+      }
       
       let responseObject = JSON.parse(response.data.body);
       const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
@@ -103,7 +171,7 @@ function Chat() {
     if (!token) return;
 
     const response = await axios.post(
-      'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/translate-word',
+      'http://localhost:5227/api/Transcribe/translate-word',
         word,
       { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
     );

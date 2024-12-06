@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, BookOpen, Coffee, Briefcase } from 'lucide-react';
+import {User, BookOpen, Coffee, Briefcase, BookMarked} from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 
 interface Partner {
@@ -32,6 +32,13 @@ const partners: Partner[] = [
     role: 'Business Professional',
     description: 'Helps with business language and professional terms.',
     icon: <Briefcase className="w-8 h-8 text-blue-500" />,
+  },
+  {
+    id: '4',
+    name: 'Maria',
+    role: 'Story Tailor',
+    description: 'A pretty good storyteller.',
+    icon: <BookMarked className="w-8 h-8 text-blue-500" />,
   },
 ];
 
