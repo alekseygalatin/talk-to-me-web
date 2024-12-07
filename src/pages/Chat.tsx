@@ -290,7 +290,8 @@ const styles = {
   chatWrapper: {
     display: 'flex',
     flexDirection: 'column',
-    height: '100vh', // Full viewport height
+    height: '100vh',
+    paddingTop: '5rem', // Increased padding from 1rem to 2rem
   },
   chatContainer: {
     flex: 1, // Allows the chat container to grow and shrink
