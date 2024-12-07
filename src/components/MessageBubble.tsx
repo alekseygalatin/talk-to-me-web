@@ -6,6 +6,7 @@ import React, { forwardRef } from 'react';
 import { HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import { FaQuestionCircle } from 'react-icons/fa';
+import QuestionPopup from './QuestionPopup'; // Adjust the path as necessary
 
 interface MessageBubbleProps {
   message: Message;
@@ -209,6 +210,13 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [popupContent, setPopupContent] = useState(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
+  const [isQuestionPopupVisible, setIsQuestionPopupVisible] = useState(false);
+  const [apiResponse, setApiResponse] = useState<{
+    suggestedAnswer: string;
+    explanation: string;
+    alternativeResponses: string[];
+    note: string;
+  } | null>(null);
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -249,15 +257,19 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
 
   const handleQuestionClick = async () => {
     try {
-      const response = await axios.post(
-        'http://localhost:5227/api/YourEndpoint', // Replace with your actual endpoint
-        { message: message.text },
-        { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-      );
+      const response = "{\n" +
+          "\"suggestedAnswer\": \"Jag arbetar som lärare, vilket jag verkligen gillar. Jag tycker om att hjälpa elever att lära och växa.\",\n" +
+          "\"explanation\": \"A detailed response that shares both the job type and personal sentiment about it.\",\n" +
+          "\"alternativeResponses\": [\n" +
+          "\"Jag jobbar som ingenjör, och jag är riktigt glad för det. Det är utmanande och spännande.\",\n" +
+          "\"Jag är projektledare inom IT, och det passar mig bra eftersom jag gillar att organisera och leda projekt.\"\n" +
+          "],\n" +
+          "\"note\": \"The response is personal and positive, showing enthusiasm for the job, which encourages a deeper conversation.\"\n" +
+          "}";
+      const data = JSON.parse(response);
 
-      const responseData = response.data; // Adjust based on your API response structure
-      setPopupContent(responseData);
-      setIsPopupVisible(true);
+      setApiResponse(data);
+      setIsQuestionPopupVisible(true);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -405,6 +417,16 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
           onTranslate={onTranslate}
           language={language}
           token={token}
+        />
+      )}
+
+      {isQuestionPopupVisible && apiResponse && (
+        <QuestionPopup
+          suggestedAnswer={apiResponse.suggestedAnswer}
+          explanation={apiResponse.explanation}
+          alternativeResponses={apiResponse.alternativeResponses}
+          note={apiResponse.note}
+          onClose={() => setIsQuestionPopupVisible(false)}
         />
       )}
     </div>
