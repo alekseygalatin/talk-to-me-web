@@ -45,8 +45,8 @@ function Chat() {
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   };
 
@@ -188,22 +188,24 @@ function Chat() {
 
   return (
     <div 
-      className={`flex flex-col ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}
+      className={`flex flex-col h-screen ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}
       style={{ 
-        minHeight: '100vh',
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
+        height: '100dvh',
       }}
     >
-      <div className="flex flex-col h-full w-full max-w-3xl mx-auto relative">
+      <div 
+        className="flex flex-col h-full w-full max-w-3xl mx-auto relative"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
         <header 
-          className={`fixed top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-4 ${
+          className={`flex items-center justify-between p-3 sm:p-4 w-full ${
             settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'
           } shadow-md z-20`}
           style={{
-            marginTop: 'env(safe-area-inset-top)',
-            maxWidth: '48rem',
-            margin: '0 auto'
+            paddingTop: `calc(env(safe-area-inset-top) + 0.75rem)`,
           }}
         >
           <div className="flex items-center gap-2 sm:gap-3">
@@ -226,10 +228,11 @@ function Chat() {
           </button>
         </header>
 
-        <div className="h-[72px] sm:h-[80px]" />
-
-        <div style={styles.chatWrapper}>
-          <div style={styles.chatContainer}>
+        <div 
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto"
+        >
+          <div className="p-4 pt-6">
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -245,18 +248,16 @@ function Chat() {
                 <MessageSquare className="w-5 h-5 animate-bounce" />
               </div>
             )}
-            <div ref={messagesEndRef} style={styles.bottomSpacer} />
+            <div ref={messagesEndRef} />
           </div>
         </div>
 
         <div 
-          className={`fixed bottom-0 left-0 right-0 border-t ${
+          className={`border-t ${
             settings.theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
           } z-20`}
           style={{
-            paddingBottom: 'env(safe-area-inset-bottom)',
-            maxWidth: '48rem',
-            margin: '0 auto'
+            paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
           }}
         >
           <div className="px-3 sm:px-4 py-3">
@@ -285,21 +286,5 @@ function Chat() {
     </div>
   );
 }
-
-const styles = {
-  chatWrapper: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh', // Full viewport height
-  },
-  chatContainer: {
-    flex: 1, // Allows the chat container to grow and shrink
-    overflowY: 'auto',
-    padding: '10px', // Optional: for spacing
-  },
-  bottomSpacer: {
-    height: '80px', // Increased height for more spacing
-  },
-};
 
 export default withAuth(Chat); 
