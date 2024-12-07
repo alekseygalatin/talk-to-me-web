@@ -20,7 +20,7 @@ const QuestionPopup: React.FC<QuestionPopupProps> = ({
     isDark,
 }) => {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDark ? 'bg-black/50' : 'bg-black/20'}`}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

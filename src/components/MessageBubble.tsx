@@ -427,6 +427,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
           alternativeResponses={apiResponse.alternativeResponses}
           note={apiResponse.note}
           onClose={() => setIsQuestionPopupVisible(false)}
+          isDark={theme === 'dark'}
         />
       )}
     </div>
