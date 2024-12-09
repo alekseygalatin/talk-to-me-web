@@ -3,24 +3,26 @@ import { motion } from 'framer-motion';
 import './QuestionPopup.css';
 
 interface QuestionPopupProps {
-    suggestedAnswer: string;
-    explanation: string;
-    alternativeResponses: string[];
-    note: string;
+    suggestedAnswer?: string;
+    explanation?: string;
+    alternativeResponses?: string[];
+    note?: string;
     onClose: () => void;
     isDark: boolean;
+    isLoading: boolean;
 }
 
-const QuestionPopup: React.FC<QuestionPopupProps> = ({
+export default function QuestionPopup({
     suggestedAnswer,
     explanation,
     alternativeResponses,
     note,
     onClose,
     isDark,
-}) => {
+    isLoading,
+}: QuestionPopupProps) {
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center ${isDark ? 'bg-black/50' : 'bg-black/20'}`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -56,44 +58,65 @@ const QuestionPopup: React.FC<QuestionPopupProps> = ({
                     </svg>
                 </button>
 
-                <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <h2 className="text-2xl font-semibold">Suggested Answer</h2>
-                    <p className="mt-2">{suggestedAnswer}</p>
-                </div>
-
                 <div className="p-6">
-                    <h3 className={`text-sm font-medium mb-2 ${
-                        isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                        Explanation
-                    </h3>
-                    <p>{explanation}</p>
+                    {isLoading ? (
+                        <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-4 
+                                border-t-blue-500 border-r-blue-500 border-b-transparent border-l-transparent"/>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className={`text-sm font-medium mb-2 ${
+                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                    Suggested Answer
+                                </h3>
+                                <p className="text-xl font-medium">{suggestedAnswer}</p>
+                            </div>
 
-                    <h3 className={`text-sm font-medium mb-2 mt-4 ${
-                        isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                        Alternative Responses
-                    </h3>
-                    <ul className="list-disc pl-5">
-                        {alternativeResponses.map((response, index) => (
-                            <li key={index}>{response}</li>
-                        ))}
-                    </ul>
+                            <div>
+                                <h3 className={`text-sm font-medium mb-2 ${
+                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                    Explanation
+                                </h3>
+                                <p className={`p-4 rounded-lg ${
+                                    isDark ? 'bg-gray-700/50' : 'bg-gray-50'
+                                }`}>
+                                    {explanation}
+                                </p>
+                            </div>
 
-                    <h3 className={`text-sm font-medium mb-2 mt-4 ${
-                        isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                        Note
-                    </h3>
-                    <p className={`italic ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                        {note}
-                    </p>
+                            <div>
+                                <h3 className={`text-sm font-medium mb-2 ${
+                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                    Alternative Responses
+                                </h3>
+                                <ul className="list-disc list-inside">
+                                    {alternativeResponses?.map((response, index) => (
+                                        <li key={index}>{response}</li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className={`text-sm font-medium mb-2 ${
+                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                    Note
+                                </h3>
+                                <p className={`italic ${
+                                    isDark ? 'text-gray-400' : 'text-gray-600'
+                                }`}>
+                                    {note}
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </div>
     );
-};
-
-export default QuestionPopup; 
+} 

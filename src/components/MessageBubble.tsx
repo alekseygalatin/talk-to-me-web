@@ -217,6 +217,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
     alternativeResponses: string[];
     note: string;
   } | null>(null);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -257,29 +258,30 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
 
   const handleQuestionClick = async () => {
     try {
-      const response = "{\n" +
-          "\"suggestedAnswer\": \"Jag arbetar som lärare, vilket jag verkligen gillar. Jag tycker om att hjälpa elever att lära och växa.\",\n" +
-          "\"explanation\": \"A detailed response that shares both the job type and personal sentiment about it.\",\n" +
-          "\"alternativeResponses\": [\n" +
-          "\"Jag jobbar som ingenjör, och jag är riktigt glad för det. Det är utmanande och spännande.\",\n" +
-          "\"Jag är projektledare inom IT, och det passar mig bra eftersom jag gillar att organisera och leda projekt.\"\n" +
-          "],\n" +
-          "\"note\": \"The response is personal and positive, showing enthusiasm for the job, which encourages a deeper conversation.\"\n" +
-          "}";
-      const data = JSON.parse(response);
+      setIsLoadingQuestion(true);
+      setIsQuestionPopupVisible(true);
+
+      let response = await axios.post(
+          'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-question-help',
+          message.text,
+          { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+      );
+
+      let responseObject = JSON.parse(response.data.body);
+      const data = JSON.parse(responseObject.Text);
 
       setApiResponse(data);
-      setIsQuestionPopupVisible(true);
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      setIsLoadingQuestion(false);
     }
   };
 
   const handleWordClick = (word: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent event bubbling to parent elements
+    event.stopPropagation();
     const clickRect = event.currentTarget.getBoundingClientRect();
     
-    // Clean the word from any symbols
     const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, '');
 
     setSelectedWord({
@@ -354,7 +356,30 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
                 className="absolute bottom-2 right-2 p-2 rounded-full hover:bg-black/10 transition-colors"
                 aria-label="Ask question"
               >
-                <FaQuestionCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                {isLoadingQuestion ? (
+                  <div className="animate-spin h-5 w-5">
+                    <svg
+                      className="h-full w-full text-gray-600 dark:text-gray-300"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      ></path>
+                    </svg>
+                  </div>
+                ) : (
+                  <FaQuestionCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                )}
               </button>
             )}
             {message.audioUrl && (
@@ -398,7 +423,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
         {isPopupVisible && (
           <WordPopup
             ref={popupRef}
-            word={popupContent.word} // Adjust based on your response structure
+            word={popupContent.word}
             onClose={() => setIsPopupVisible(false)}
             theme={theme}
             onTranslate={onTranslate}
@@ -420,14 +445,18 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
         />
       )}
 
-      {isQuestionPopupVisible && apiResponse && (
+      {isQuestionPopupVisible && (
         <QuestionPopup
-          suggestedAnswer={apiResponse.suggestedAnswer}
-          explanation={apiResponse.explanation}
-          alternativeResponses={apiResponse.alternativeResponses}
-          note={apiResponse.note}
-          onClose={() => setIsQuestionPopupVisible(false)}
+          suggestedAnswer={apiResponse?.suggestedAnswer}
+          explanation={apiResponse?.explanation}
+          alternativeResponses={apiResponse?.alternativeResponses}
+          note={apiResponse?.note}
+          onClose={() => {
+            setIsQuestionPopupVisible(false);
+            setApiResponse(null);
+          }}
           isDark={theme === 'dark'}
+          isLoading={isLoadingQuestion}
         />
       )}
     </div>
