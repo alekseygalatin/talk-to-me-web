@@ -3,30 +3,28 @@ import { Play, Pause, Copy, Volume2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
 import React, { forwardRef } from 'react';
+import { useAppContext } from '../contexts/AppContext';
 
 interface MessageBubbleProps {
   message: Message;
-  theme: 'light' | 'dark';
   onTranslate: (word: string, token: string) => Promise<any>;
-  language: string;
   token: string | null;
 }
 
 interface WordPopupProps {
   word: string;
   onClose: () => void;
-  theme: 'light' | 'dark';
   onTranslate: (word: string, token: string) => Promise<any>;
-  language: string;
   token: string | null;
 }
 
 const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
-  ({ word, onClose, theme, onTranslate, language, token }, ref) => {
-    const isDark = theme === 'dark';
+  ({ word, onClose, onTranslate, token }, ref) => {
     const [translation, setTranslation] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const translateRequestRef = useRef<AbortController | null>(null);
+
+    const { preferences } = useAppContext();
 
     useEffect(() => {
       if (translateRequestRef.current) {
@@ -68,22 +66,17 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className={`relative rounded-2xl shadow-2xl
-            w-[95vw] sm:w-[550px] md:w-[600px] lg:w-[650px]
-            ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}
+          className='relative rounded-2xl shadow-2xl
+            w-[95vw] sm:w-[550px] md:w-[600px] lg:w-[650px] bg-white text-gray-900 dark:bg-gray-800 dark:text-white
             backdrop-blur-lg backdrop-filter
-            border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
+            border border-gray-200 dark:border-gray-700'
         >
           <button
             onClick={onClose}
-            className={`absolute right-4 top-4 p-2 rounded-full transition-colors
-              ${isDark 
-                ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' 
-                : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-              }
-              focus:outline-none focus:ring-2 focus:ring-offset-2 
-              ${isDark ? 'focus:ring-gray-700' : 'focus:ring-gray-300'}
-            `}
+            className='absolute right-4 top-4 p-2 rounded-full transition-colors hover:bg-gray-100 text-gray-500 hover:text-gray-700
+                dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-gray-200 
+                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300
+                dark:focus:ring-gray-700'
             aria-label="Close popup"
           >
             <svg 
@@ -99,7 +92,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
             </svg>
           </button>
 
-          <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className='p-6 border-b border-gray-200 dark:border-gray-700'>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className="text-2xl font-semibold">{word}</span>
@@ -109,11 +102,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                       await navigator.clipboard.writeText(word);
                       onClose();
                     }}
-                    className={`p-2 rounded-lg transition-colors ${
-                      isDark 
-                        ? 'hover:bg-gray-700 text-gray-300' 
-                        : 'hover:bg-gray-100 text-gray-600'
-                    }`}
+                    className='p-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300'
                     title="Copy word"
                   >
                     <Copy className="w-5 h-5" />
@@ -121,15 +110,11 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                   <button
                     onClick={() => {
                       const utterance = new SpeechSynthesisUtterance(word);
-                      utterance.lang = language;
+                      utterance.lang = preferences?.currentLanguageToLearn!;
                       utterance.rate = 0.9;
                       window.speechSynthesis.speak(utterance);
                     }}
-                    className={`p-2 rounded-lg transition-colors ${
-                      isDark 
-                        ? 'hover:bg-gray-700 text-gray-300' 
-                        : 'hover:bg-gray-100 text-gray-600'
-                    }`}
+                    className='p-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300'
                     title="Speak word"
                   >
                     <Volume2 className="w-5 h-5" />
@@ -149,36 +134,26 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
               translation && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className={`text-sm font-medium mb-2 ${
-                      isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
+                    <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                       Translation
                     </h3>
                     <p className="text-xl font-medium">{translation.translation}</p>
                   </div>
 
                   <div>
-                    <h3 className={`text-sm font-medium mb-2 ${
-                      isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
+                    <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                       Example
                     </h3>
-                    <p className={`p-4 rounded-lg ${
-                      isDark ? 'bg-gray-700/50' : 'bg-gray-50'
-                    }`}>
+                    <p className='p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50'>
                       {translation.example_usage}
                     </p>
                   </div>
 
                   <div>
-                    <h3 className={`text-sm font-medium mb-2 ${
-                      isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
+                    <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                       Notes
                     </h3>
-                    <p className={`italic ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
+                    <p className='italic text-gray-600 dark:text-gray-400'>
                       {translation.translation_notes}
                     </p>
                   </div>
@@ -194,7 +169,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
 
 export default WordPopup;
 
-export function MessageBubble({ message, theme, onTranslate, language, token }: MessageBubbleProps) {
+export function MessageBubble({ message, onTranslate, token }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
     position: { x: number; y: number };
@@ -324,11 +299,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
       <span key={index}>
         <span
           onClick={(e) => handleWordClick(word, e)}
-          className={`cursor-pointer hover:bg-opacity-20 ${
-            theme === 'dark' 
-              ? 'hover:bg-gray-300' 
-              : 'hover:bg-gray-600'
-          } rounded px-0.5 py-0.5 transition-colors duration-200`}
+          className='cursor-pointer hover:bg-opacity-20 rounded px-0.5 py-0.5 transition-colors duration-200 hover:bg-gray-600 dark:hover:bg-gray-300'
         >
           {word}
         </span>
@@ -354,12 +325,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
           <div
             className={`relative group px-3 py-2 rounded-2xl break-words ${
               message.isUser
-                ? theme === 'dark'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-blue-500 text-white'
-                : theme === 'dark'
-                ? 'bg-gray-700 text-white'
-                : 'bg-white text-gray-800'
+                ? 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white' : 'bg-white text-gray-800 dark:bg-gray-700 dark:text-white'
             } ${message.isUser ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
           >
             {renderWords(message.text)}
@@ -406,9 +372,7 @@ export function MessageBubble({ message, theme, onTranslate, language, token }: 
                 ref={popupRef}
                 word={selectedWord.word}
                 onClose={() => setSelectedWord(null)}
-                theme={theme}
                 onTranslate={onTranslate}
-                language={language}
                 token={token}
             />
         )}
