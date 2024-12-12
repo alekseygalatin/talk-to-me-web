@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {User, BookOpen, Coffee, Briefcase, BookMarked} from 'lucide-react';
 import { withAuth } from '../components/withAuth';
+import { useAppContext } from "../contexts/AppContext";
+
 
 interface Partner {
   id: string;
@@ -43,20 +45,31 @@ const partners: Partner[] = [
 ];
 
 function SelectPartner() {
+
   const navigate = useNavigate();
 
+  const {preferences, isLoading} = useAppContext();
+
+  if (isLoading) {
+    return <p>Loading preferences...</p>; 
+  }
+ 
   const handleSelectPartner = (partnerId: string) => {
     navigate(`/chat/${partnerId}`);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
+      
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Welcome, {preferences?.name}
+          </h1>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Choose Your Conversation Partner
           </h1>
@@ -95,6 +108,7 @@ function SelectPartner() {
           ))}
         </div>
       </div>
+      
     </div>
   );
 }

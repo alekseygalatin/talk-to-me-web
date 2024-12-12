@@ -2,19 +2,16 @@ import { Mic, Send, Loader2, MicOff, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { TipsDialog } from './TipsDialog';
+import { useAppContext } from '../contexts/AppContext';
 
 interface ChatInputProps {
     onSendMessage: (text: string) => void;
     isProcessing: boolean;
-    theme: 'light' | 'dark';
-    language: string;
 }
 
 export function ChatInput({
                               onSendMessage,
                               isProcessing,
-                              theme,
-                              language,
                           }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [isTipsOpen, setIsTipsOpen] = useState(false);
@@ -25,6 +22,8 @@ export function ChatInput({
         browserSupportsSpeechRecognition,
         isMicrophoneAvailable,
     } = useSpeechRecognition();
+
+    const { preferences } = useAppContext();
 
     // Handle recording stop and send message
     useEffect(() => {
@@ -72,12 +71,10 @@ export function ChatInput({
             resetTranscript();
             SpeechRecognition.startListening({
                 continuous: true,
-                language: language
+                language: preferences?.currentLanguageToLearn!
             });
         }
     };
-
-    const isDark = theme === 'dark';
 
     if (!browserSupportsSpeechRecognition) {
         return (
@@ -95,11 +92,8 @@ export function ChatInput({
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={listening ? 'Listening...' : 'Type a message...'}
-                    className={`w-full rounded-2xl border ${
-                        isDark
-                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400'
-                            : 'border-gray-200 bg-white text-gray-900'
-                    } pl-4 pr-32 py-3 focus:outline-none focus:border-blue-500 resize-none min-h-[52px] ${
+                    className={`w-full rounded-2xl border border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 
+                        dark:text-white dark:placeholder-gray-400 pl-4 pr-32 py-3 focus:outline-none focus:border-blue-500 resize-none min-h-[52px] ${
                         listening ? 'animate-pulse' : ''
                     }`}
                     rows={1}
@@ -125,9 +119,7 @@ export function ChatInput({
                             className={`p-2.5 rounded-full transition-all ${
                                 listening
                                     ? 'bg-red-500 text-white animate-pulse hover:bg-red-600'
-                                    : isDark
-                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                        : 'bg-gray-100 hover:bg-gray-200'
+                                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                             }`}
                             disabled={isProcessing}
                             title={listening ? 'Stop listening' : 'Start listening'}
@@ -141,11 +133,7 @@ export function ChatInput({
                     ) : (
                         <button
                             type="button"
-                            className={`p-2.5 rounded-full ${
-                                isDark
-                                    ? 'bg-gray-700 text-gray-500'
-                                    : 'bg-gray-100 text-gray-400'
-                            } cursor-not-allowed`}
+                            className='p-2.5 rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
                             disabled
                             title="Microphone access denied"
                         >
@@ -155,11 +143,8 @@ export function ChatInput({
                     <button
                         type="submit"
                         disabled={!message.trim() || isProcessing || listening}
-                        className={`p-2.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                            isDark 
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:hover:bg-blue-600'
-                                : 'bg-blue-500 hover:bg-blue-600 text-white disabled:hover:bg-blue-500'
-                        }`}
+                        className='p-2.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 
+                            text-white disabled:hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white dark:disabled:hover:bg-blue-600'
                     >
                         {isProcessing ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -172,7 +157,6 @@ export function ChatInput({
             <TipsDialog
                 isOpen={isTipsOpen}
                 onClose={() => setIsTipsOpen(false)}
-                theme={theme}
             />
         </>
     );

@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import './QuestionPopup.css';
 
@@ -8,7 +7,6 @@ interface QuestionPopupProps {
     alternativeResponses?: string[];
     note?: string;
     onClose: () => void;
-    isDark: boolean;
     isLoading: boolean;
 }
 
@@ -18,7 +16,6 @@ export default function QuestionPopup({
     alternativeResponses,
     note,
     onClose,
-    isDark,
     isLoading,
 }: QuestionPopupProps) {
     return (
@@ -28,21 +25,15 @@ export default function QuestionPopup({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 className={`relative rounded-2xl shadow-2xl
-                    w-[95vw] sm:w-[550px] md:w-[600px] lg:w-[650px]
-                    ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}
+                    w-[95vw] sm:w-[550px] md:w-[600px] lg:w-[650px] bg-white text-gray-900 dark:bg-gray-800 dark:text-white
                     backdrop-blur-lg backdrop-filter
-                    border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
+                    border border-gray-200 dark:border-gray-700`}
             >
                 <button
                     onClick={onClose}
-                    className={`absolute right-4 top-4 p-2 rounded-full transition-colors
-                        ${isDark 
-                            ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' 
-                            : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-                        }
-                        focus:outline-none focus:ring-2 focus:ring-offset-2 
-                        ${isDark ? 'focus:ring-gray-700' : 'focus:ring-gray-300'}
-                    `}
+                    className={`absolute right-4 top-4 p-2 rounded-full transition-colors hover:bg-gray-100 text-gray-500 hover:text-gray-700
+                            dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-gray-200' 
+                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-gray-700`}
                     aria-label="Close popup"
                 >
                     <svg 
@@ -67,31 +58,23 @@ export default function QuestionPopup({
                     ) : (
                         <div className="space-y-6">
                             <div>
-                                <h3 className={`text-sm font-medium mb-2 ${
-                                    isDark ? 'text-gray-400' : 'text-gray-500'
-                                }`}>
+                                <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                                     Suggested Answer
                                 </h3>
                                 <p className="text-xl font-medium">{suggestedAnswer}</p>
                             </div>
 
                             <div>
-                                <h3 className={`text-sm font-medium mb-2 ${
-                                    isDark ? 'text-gray-400' : 'text-gray-500'
-                                }`}>
+                                <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                                     Explanation
                                 </h3>
-                                <p className={`p-4 rounded-lg ${
-                                    isDark ? 'bg-gray-700/50' : 'bg-gray-50'
-                                }`}>
+                                <p className='p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50'>
                                     {explanation}
                                 </p>
                             </div>
 
                             <div>
-                                <h3 className={`text-sm font-medium mb-2 ${
-                                    isDark ? 'text-gray-400' : 'text-gray-500'
-                                }`}>
+                                <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                                     Alternative Responses
                                 </h3>
                                 <ul className="list-disc list-inside">
@@ -102,14 +85,10 @@ export default function QuestionPopup({
                             </div>
 
                             <div>
-                                <h3 className={`text-sm font-medium mb-2 ${
-                                    isDark ? 'text-gray-400' : 'text-gray-500'
-                                }`}>
+                                <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                                     Note
                                 </h3>
-                                <p className={`italic ${
-                                    isDark ? 'text-gray-400' : 'text-gray-600'
-                                }`}>
+                                <p className='italic text-gray-600 dark:text-gray-400'>
                                     {note}
                                 </p>
                             </div>
