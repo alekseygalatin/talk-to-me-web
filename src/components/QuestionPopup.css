@@ -1,0 +1,7 @@
+.question-popup {
+    background-color: #fff; /* White background for the popup */
+    border-radius: 8px; /* Example border radius */
+    padding: 16px; /* Example padding */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Example shadow */
+    /* Add more styles to match the word popup */
+} 

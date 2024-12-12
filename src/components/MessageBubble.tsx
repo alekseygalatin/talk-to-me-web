@@ -3,6 +3,10 @@ import { Play, Pause, Copy, Volume2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
 import React, { forwardRef } from 'react';
+import { HelpCircle } from 'lucide-react';
+import axios from 'axios';
+import { FaQuestionCircle } from 'react-icons/fa';
+import QuestionPopup from './QuestionPopup'; // Adjust the path as necessary
 import { useAppContext } from '../contexts/AppContext';
 
 interface MessageBubbleProps {
@@ -178,8 +182,17 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [popupContent, setPopupContent] = useState(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
-  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  const [isQuestionPopupVisible, setIsQuestionPopupVisible] = useState(false);
+  const [apiResponse, setApiResponse] = useState<{
+    suggestedAnswer: string;
+    explanation: string;
+    alternativeResponses: string[];
+    note: string;
+  } | null>(null);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -218,63 +231,25 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
     }
   }, []);
 
-  useEffect(() => {
-    const adjustPopupPosition = () => {
-      if (popupRef.current && selectedWord) {
-        const rect = popupRef.current.getBoundingClientRect();
-        const newStyle: React.CSSProperties = {};
+  const handleQuestionClick = async () => {
+    try {
+      setIsLoadingQuestion(true);
+      setIsQuestionPopupVisible(true);
 
-        // Calculate initial position
-        let left = selectedWord.position.x - rect.width / 2; // Center horizontally
-        let top = selectedWord.position.y + 10; // Slightly below the word
+      let response = await axios.post(
+          'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-question-help',
+          message.text,
+          { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+      );
 
-        // Adjust horizontal position
-        if (left + rect.width > window.innerWidth) {
-          left = window.innerWidth - rect.width - 10; // 10px padding
-        } else if (left < 0) {
-          left = 10; // 10px padding from the left
-        }
+      let responseObject = JSON.parse(response.data.body);
+      const data = JSON.parse(responseObject.Text);
 
-        // Adjust vertical position
-        if (top + rect.height > window.innerHeight) {
-          top = selectedWord.position.y - rect.height - 10; // 10px padding
-        } else if (top < 0) {
-          top = 10; // 10px padding from the top
-        }
-
-        newStyle.left = left;
-        newStyle.top = top;
-
-        setPopupStyle(newStyle);
-      }
-    };
-
-    const resizeObserver = new ResizeObserver(adjustPopupPosition);
-
-    if (popupRef.current) {
-      resizeObserver.observe(popupRef.current);
-    }
-
-    window.addEventListener('resize', adjustPopupPosition);
-
-    return () => {
-      if (popupRef.current) {
-        resizeObserver.unobserve(popupRef.current);
-      }
-      window.removeEventListener('resize', adjustPopupPosition);
-    };
-  }, [selectedWord]);
-
-  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (audioRef.current) {
-      const progressBar = e.currentTarget;
-      const rect = progressBar.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percentage = (x / rect.width) * 100;
-      const time = (percentage / 100) * audioRef.current.duration;
-
-      audioRef.current.currentTime = time;
-      setProgress(percentage);
+      setApiResponse(data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoadingQuestion(false);
     }
   };
 
@@ -282,7 +257,6 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
     event.stopPropagation();
     const clickRect = event.currentTarget.getBoundingClientRect();
     
-    // Clean the word from any symbols
     const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, '');
 
     setSelectedWord({
@@ -308,6 +282,19 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
     ));
   };
 
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (audioRef.current) {
+      const progressBar = e.currentTarget;
+      const rect = progressBar.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      const time = (percentage / 100) * audioRef.current.duration;
+
+      audioRef.current.currentTime = time;
+      setProgress(percentage);
+    }
+  };
+
   return (
     <div className="relative">
       <motion.div
@@ -318,9 +305,9 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
         onClick={() => setSelectedWord(null)}
       >
         <div
-            className={`flex flex-col space-y-1 max-w-[85vw] sm:max-w-[75%] ${
-                message.isUser ? 'items-end ml-auto' : 'items-start'
-            }`}
+          className={`flex flex-col space-y-1 max-w-[85vw] sm:max-w-[75%] ${
+            message.isUser ? 'items-end ml-auto' : 'items-start'
+          }`}
         >
           <div
             className={`relative group px-3 py-2 rounded-2xl break-words ${
@@ -329,59 +316,108 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
             } ${message.isUser ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
           >
             {renderWords(message.text)}
-            {message.audioUrl && (
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                      onClick={toggleAudio}
-                      className="p-2 rounded-full hover:bg-black/10 transition-colors"
-                  >
-                    {isPlaying ? (
-                        <Pause className="w-4 h-4"/>
-                    ) : (
-                        <Play className="w-4 h-4"/>
-                    )}
-                  </button>
-                  <audio
-                      ref={audioRef}
-                      src={message.audioUrl}
-                      onEnded={() => setIsPlaying(false)}
-                      className="hidden"
-                  />
-                  <div
-                      className="h-1.5 flex-1 bg-black/10 rounded-full cursor-pointer overflow-hidden"
-                      onClick={handleProgressBarClick}
-                  >
-                    <motion.div
-                        className="h-full bg-black/20 rounded-full"
-                        style={{width: `${progress}%`}}
-                        transition={{type: "tween"}}
-                    />
+            {!message.isUser && (
+              <button
+                onClick={handleQuestionClick}
+                className="absolute bottom-2 right-2 p-2 rounded-full hover:bg-black/10 transition-colors"
+                aria-label="Ask question"
+              >
+                {isLoadingQuestion ? (
+                  <div className="animate-spin h-5 w-5">
+                    <svg
+                      className="h-full w-full text-gray-600 dark:text-gray-300"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      ></path>
+                    </svg>
                   </div>
+                ) : (
+                  <FaQuestionCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                )}
+              </button>
+            )}
+            {message.audioUrl && (
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  onClick={toggleAudio}
+                  className="p-2 rounded-full hover:bg-black/10 transition-colors"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4"/>
+                  ) : (
+                    <Play className="w-4 h-4"/>
+                  )}
+                </button>
+                <audio
+                  ref={audioRef}
+                  src={message.audioUrl}
+                  onEnded={() => setIsPlaying(false)}
+                  className="hidden"
+                />
+                <div
+                  className="h-1.5 flex-1 bg-black/10 rounded-full cursor-pointer overflow-hidden"
+                  onClick={handleProgressBarClick}
+                >
+                  <motion.div
+                    className="h-full bg-black/20 rounded-full"
+                    style={{width: `${progress}%`}}
+                    transition={{type: "tween"}}
+                  />
                 </div>
+              </div>
             )}
             <span className="text-xs opacity-60 mt-1 block">
-            {new Date(message.timestamp).toLocaleTimeString()}
-          </span>
+              {new Date(message.timestamp).toLocaleTimeString()}
+            </span>
           </div>
         </div>
       </motion.div>
 
       <AnimatePresence>
-        {selectedWord && (
-            <WordPopup
-                ref={popupRef}
-                word={selectedWord.word}
-                onClose={() => setSelectedWord(null)}
-                onTranslate={onTranslate}
-                token={token}
-            />
+        {isPopupVisible && (
+          <WordPopup
+            ref={popupRef}
+            word={popupContent.word}
+            onClose={() => setIsPopupVisible(false)}
+            onTranslate={onTranslate}
+            token={token}
+          />
         )}
       </AnimatePresence>
 
       {selectedWord && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setSelectedWord(null)}
+        <WordPopup
+          ref={popupRef}
+          word={selectedWord.word}
+          onClose={() => setSelectedWord(null)}
+          onTranslate={onTranslate}
+          token={token}
+        />
+      )}
+
+      {isQuestionPopupVisible && (
+        <QuestionPopup
+          suggestedAnswer={apiResponse?.suggestedAnswer}
+          explanation={apiResponse?.explanation}
+          alternativeResponses={apiResponse?.alternativeResponses}
+          note={apiResponse?.note}
+          onClose={() => {
+            setIsQuestionPopupVisible(false);
+            setApiResponse(null);
+          }}
+          isLoading={isLoadingQuestion}
         />
       )}
     </div>
