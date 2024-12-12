@@ -6,7 +6,6 @@ import { ChatInput } from '../components/ChatInput';
 import { MessageSquare } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
-import { useAppContext } from '../contexts/AppContext';
 
 interface Message {
   id: string;
@@ -23,7 +22,6 @@ function Chat() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
-  const { preferences } = useAppContext();
 
   const scrollToBottom = () => {
     if (messagesEndRef.current && chatContainerRef.current) {
