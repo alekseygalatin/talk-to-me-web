@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, BookOpen, Coffee, Briefcase, BookMarked} from 'lucide-react';
 import { withAuth } from '../components/withAuth';
+import { useAppContext } from "../contexts/AppContext";
+
 
 interface Partner {
   id: string;
@@ -47,6 +49,12 @@ function SelectPartner() {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
+  const {preferences, isLoading} = useAppContext();
+
+  if (isLoading) {
+    return <p>Loading preferences...</p>; 
+  }
+ 
   const handleSelectPartner = (partnerId: string) => {
     navigate(`/chat/${partnerId}`);
   };
@@ -113,6 +121,9 @@ function SelectPartner() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Welcome, {preferences?.name}
+          </h1>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Choose Your Conversation Partner
           </h1>

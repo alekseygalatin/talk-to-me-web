@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
-import { SettingsSidebar } from '../components/SettingsSidebar';
-import { ArrowLeft, Settings, MessageSquare } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MessageSquare } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
 
@@ -17,31 +15,12 @@ interface Message {
   audioUrl?: string;
 }
 
-interface Settings {
-  theme: 'light' | 'dark';
-  language: string;
-  volume: number;
-  microphoneSensitivity: number;
-}
-
 function Chat() {
   const { partnerId } = useParams();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
-  const [settings, setSettings] = useState<Settings>(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' ?? 'dark'; // Default to dark theme
-    return {
-      theme: savedTheme,
-      language: 'sv-SE',
-      volume: 80,
-      microphoneSensitivity: 100,
-    };
-  });
-
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -54,10 +33,6 @@ function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', settings.theme === 'dark');
-    localStorage.setItem('theme', settings.theme);
-  }, [settings.theme]);
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -169,9 +144,6 @@ function Chat() {
     }
   };
 
-  const handleSettingsChange = (key: keyof Settings, value: any) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
 
   const onTranslate = useCallback(async (word: string) => {
     if (!token) return;
@@ -188,9 +160,9 @@ function Chat() {
 
   return (
     <div 
-      className={`flex flex-col h-screen ${settings.theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}
+      className='flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-900'
       style={{ 
-        height: '100dvh',
+        height: '90dvh',
       }}
     >
       <div 
@@ -200,34 +172,7 @@ function Chat() {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        <header 
-          className={`flex items-center justify-between p-3 sm:p-4 w-full ${
-            settings.theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-          } shadow-md z-20`}
-          style={{
-            paddingTop: `calc(env(safe-area-inset-top) + 0.75rem)`,
-          }}
-        >
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => navigate('/select-partner')}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-            </button>
-            <div>
-              <h1 className={`text-lg sm:text-xl font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Talk And Learn</h1>
-              <p className={`text-xs sm:text-sm ${settings.theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Language Teacher</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${settings.theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </header>
-
+       
         <div 
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto"
@@ -237,14 +182,12 @@ function Chat() {
               <MessageBubble
                 key={message.id}
                 message={message}
-                theme={settings.theme}
                 onTranslate={onTranslate}
-                language={settings.language}
                 token={token}
               />
             ))}
             {isProcessing && (
-              <div className={`flex justify-center py-2 ${settings.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              <div className='flex justify-center py-2 text-gray-600 dark:text-gray-400'>
                 <MessageSquare className="w-5 h-5 animate-bounce" />
               </div>
             )}
@@ -253,9 +196,7 @@ function Chat() {
         </div>
 
         <div 
-          className={`border-t ${
-            settings.theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
-          } z-20`}
+          className='border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
           style={{
             paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
           }}
@@ -264,24 +205,9 @@ function Chat() {
             <ChatInput
               onSendMessage={handleSendMessage}
               isProcessing={isProcessing}
-              theme={settings.theme}
-              language={settings.language}
             />
           </div>
         </div>
-
-        <SettingsSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          settings={settings}
-          onSettingsChange={handleSettingsChange}
-          theme={settings.theme}
-          className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md"
-          style={{ 
-            top: 'env(safe-area-inset-top)',
-            bottom: 'env(safe-area-inset-bottom)'
-          }}
-        />
       </div>
     </div>
   );

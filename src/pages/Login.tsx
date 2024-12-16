@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { CognitoUser, AuthenticationDetails, CognitoUserPool } from 'amazon-cognito-identity-js';
+import AuthService from '../core/auth/authService';
 
 const poolData = {
   UserPoolId: 'us-east-1_walDCpNcK',
@@ -38,7 +39,7 @@ export function Login() {
     cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: (session) => {
         const token = session.getIdToken().getJwtToken();
-        localStorage.setItem('idToken', token);
+        AuthService.storeToken(token);
         setIsLoading(false);
         navigate('/select-partner');
       },
@@ -54,9 +55,9 @@ export function Login() {
           cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
             onSuccess: (session) => {
               const token = session.getIdToken().getJwtToken();
-              localStorage.setItem('idToken', token);
+              AuthService.storeToken(token);
               setIsLoading(false);
-              navigate('/select-partner');
+              navigate('/select-language-to-learn');
             },
             onFailure: (err) => {
               setError(err.message || 'An error occurred during password change');
