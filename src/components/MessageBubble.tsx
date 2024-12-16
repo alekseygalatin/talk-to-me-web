@@ -146,9 +146,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                         ? 'bg-gray-500 text-white' 
                         : isAdded 
                         ? 'bg-green-500 text-white' 
-                        : isDark 
-                        ? 'hover:bg-gray-700 text-gray-300' 
-                        : 'hover:bg-gray-100 text-gray-600'
+                        : 'dark:hover:bg-gray-700 dark:text-gray-300'
                     }`}
                     title="Add to Dictionary"
                     disabled={isAdding}
