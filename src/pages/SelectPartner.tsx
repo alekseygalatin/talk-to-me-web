@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import {User, BookOpen, Coffee, Briefcase, BookMarked} from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, BookOpen, Coffee, Briefcase, BookMarked} from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 
 interface Partner {
@@ -44,6 +45,7 @@ const partners: Partner[] = [
 
 function SelectPartner() {
   const navigate = useNavigate();
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSelectPartner = (partnerId: string) => {
     navigate(`/chat/${partnerId}`);
@@ -51,6 +53,60 @@ function SelectPartner() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
+      {!isSidebarOpen && (
+        <button
+          className="fixed top-4 left-4 z-50 p-2 rounded-full shadow-lg transition-transform transform hover:scale-110"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <div className="space-y-1">
+            <span className="block w-6 h-0.5 bg-gray-900 dark:bg-white"></span>
+            <span className="block w-6 h-0.5 bg-gray-900 dark:bg-white"></span>
+            <span className="block w-6 h-0.5 bg-gray-900 dark:bg-white"></span>
+          </div>
+        </button>
+      )}
+
+      <motion.div
+        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg z-40 transform ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        initial={{ x: '-100%' }}
+        animate={{ x: isSidebarOpen ? 0 : '-100%' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      >
+        <div className="p-6">
+          <button
+            className="text-gray-900 dark:text-white mb-6"
+            onClick={() => setSidebarOpen(false)}
+          >
+            ✕
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Menu</h2>
+          <Link
+            to="/home"
+            className="block text-gray-900 dark:text-white font-semibold mb-4 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-300"
+            onClick={() => setSidebarOpen(false)}
+          >
+            Home
+          </Link>
+          <Link
+            to="/profile"
+            className="block text-gray-900 dark:text-white font-semibold mb-4 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-300"
+            onClick={() => setSidebarOpen(false)}
+          >
+            Profile
+          </Link>
+          <Link
+            to="/words"
+            className="block text-gray-900 dark:text-white font-semibold mb-4 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-300"
+            onClick={() => setSidebarOpen(false)}
+          >
+            Words
+          </Link>
+          {/* Add more links as needed */}
+        </div>
+      </motion.div>
+
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

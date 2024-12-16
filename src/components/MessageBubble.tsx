@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Copy, Volume2 } from 'lucide-react';
+import { Play, Pause, Copy, Volume2, Check, BookmarkPlus } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
 import React, { forwardRef } from 'react';
@@ -31,6 +31,8 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     const [translation, setTranslation] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const translateRequestRef = useRef<AbortController | null>(null);
+    const [isAdding, setIsAdding] = useState(false);
+    const [isAdded, setIsAdded] = useState(false);
 
     useEffect(() => {
       if (translateRequestRef.current) {
@@ -64,6 +66,20 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
         }
       };
     }, [word, onTranslate]);
+
+    const handleAddToDictionary = async () => {
+      setIsAdding(true);
+      try {
+        // Mock API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 2000); // Reset after 2 seconds
+      } catch (error) {
+        console.error('Error adding word to dictionary:', error);
+      } finally {
+        setIsAdding(false);
+      }
+    };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
@@ -138,6 +154,24 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                   >
                     <Volume2 className="w-5 h-5" />
                   </button>
+                  <motion.button
+                    onClick={handleAddToDictionary}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isAdding 
+                        ? 'bg-gray-500 text-white' 
+                        : isAdded 
+                        ? 'bg-green-500 text-white' 
+                        : isDark 
+                        ? 'hover:bg-gray-700 text-gray-300' 
+                        : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                    title="Add to Dictionary"
+                    disabled={isAdding}
+                    animate={isAdded ? { scale: 1.1, backgroundColor: '#34D399' } : { scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                  >
+                    {isAdded ? <Check className="w-5 h-5" /> : <BookmarkPlus className="w-5 h-5" />}
+                  </motion.button>
                 </div>
               </div>
             </div>
