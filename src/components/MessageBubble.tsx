@@ -68,10 +68,17 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     const handleAddToDictionary = async () => {
       setIsAdding(true);
       try {
-        // Mock API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setIsAdded(true);
-        setTimeout(() => setIsAdded(false), 2000); // Reset after 2 seconds
+        const response = await axios.post('http://localhost:5227/api/Words', {
+          word: word,
+          translation: translation.translation,
+          example: translation.example_usage,
+          includeIntoChat: true
+        });
+
+        if (response.status === 200) {
+          setIsAdded(true);
+          setTimeout(() => setIsAdded(false), 2000); // Reset after 2 seconds
+        }
       } catch (error) {
         console.error('Error adding word to dictionary:', error);
       } finally {

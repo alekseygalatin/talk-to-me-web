@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { withAuth } from '../components/withAuth';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -9,23 +9,25 @@ interface Word {
   translation: string;
   transcript: string;
   example: string;
+  includeIntoChat: boolean;
 }
 
 const WordsPage: React.FC = () => {
-  const words: Word[] = [
-    { 
-      word: 'Hello', 
-      translation: 'Hola', 
-      transcript: 'həˈlō', 
-      example: 'Hello, how are you?' 
-    },
-    { 
-      word: 'World', 
-      translation: 'Mundo', 
-      transcript: 'wərld', 
-      example: 'The world is round.' 
-    },
-  ];
+  const [words, setWords] = useState<Word[]>([]);
+
+  useEffect(() => {
+    const fetchWords = async () => {
+      try {
+        const response = await fetch('http://localhost:5227/api/Words');
+        const data = await response.json();
+        setWords(data);
+      } catch (error) {
+        console.error('Error fetching words:', error);
+      }
+    };
+
+    fetchWords();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
@@ -74,10 +76,10 @@ const WordsPage: React.FC = () => {
                     Translation
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Transcript
+                    Usage Example
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Usage Example
+                    Include in Chat
                   </th>
                 </tr>
               </thead>
@@ -99,11 +101,23 @@ const WordsPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                       {word.translation}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300 font-mono">
-                      {word.transcript}
-                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
                       {word.example}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={word.includeIntoChat}
+                          onChange={() => {
+                            const updatedWords = [...words];
+                            updatedWords[index].includeIntoChat = !updatedWords[index].includeIntoChat;
+                            setWords(updatedWords);
+                          }}
+                          className="form-checkbox h-5 w-5 text-blue-600"
+                        />
+                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-300">Include in Chat</span>
+                      </label>
                     </td>
                   </motion.tr>
                 ))}
