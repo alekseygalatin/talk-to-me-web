@@ -57,7 +57,7 @@ export function Login() {
               const token = session.getIdToken().getJwtToken();
               AuthService.storeToken(token);
               setIsLoading(false);
-              navigate('/select-language-to-learn');
+              navigate('/select-partner');
             },
             onFailure: (err) => {
               setError(err.message || 'An error occurred during password change');

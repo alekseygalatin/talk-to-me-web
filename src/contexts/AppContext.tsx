@@ -55,6 +55,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (!fetchedPreferences.currentLanguageToLearn) {
           navigate(`/select-language-to-learn`, { state: { returnTo: location.pathname } });
         }
+        setIsLoading(false);
 
       } catch (error: any) {
         if (error.response && error.response.status === 404) {
@@ -63,9 +64,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } else {
           console.error("Error fetching user preferences:", error);
         }
-      } finally {
         setIsLoading(false);
-      }
+      } 
     };
 
     fetchPreferences();
