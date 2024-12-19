@@ -10,6 +10,8 @@ import {
   Coffee,
   Briefcase,
   BookMarked,
+  ChevronDown,
+  LogOut,
 } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import { useAppContext } from '../contexts/AppContext';
@@ -58,6 +60,7 @@ function SelectPartner() {
   const navigate = useNavigate();
   const { preferences, isLoading } = useAppContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const handleSelectPartner = (partnerId: string) => {
     navigate(`/chat/${partnerId}`);
@@ -77,66 +80,91 @@ function SelectPartner() {
           <header className="bg-white dark:bg-gray-800 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-16">
-                {/* Logo and Nav Links */}
+                {/* Left Side: Logo and Navigation */}
                 <div className="flex">
+                  {/* Logo */}
                   <div className="flex-shrink-0 flex items-center">
                     <Link
                       to="/"
                       className="text-2xl font-bold text-blue-600 dark:text-white"
                     >
-                      LanguageApp
+                      Talk&Learn
                     </Link>
                   </div>
-                  <div className="hidden md:ml-6 md:flex md:space-x-8">
+                  {/* Desktop Navigation */}
+                  <div className="hidden md:flex md:items-center md:space-x-6 ml-8">
                     <Link
                       to="/select-partner"
-                      className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-blue-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                      className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white text-sm font-medium"
                     >
                       Home
                     </Link>
                     <Link
-                      to="/user-preferences"
-                      className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-blue-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
-                    >
-                      Preferences
-                    </Link>
-                    <Link
-                      to="/select-language-to-learn"
-                      className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-blue-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
-                    >
-                      Languages
-                    </Link>
-                    <Link
-                        to="/words"
-                        className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-blue-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                      to="/words"
+                      className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white text-sm font-medium"
                     >
                       Dictionary
                     </Link>
-                  </div>
-                </div>
-                {/* User Info and Mobile Menu Button */}
-                <div className="flex items-center">
-                  <div className="hidden md:flex md:items-center md:space-x-6">
-                    {/* User Name */}
-                    <Link
-                      to="/user-preferences"
-                      className="flex items-center space-x-2 hover:text-blue-500"
-                    >
-                      <UserCog className="w-6 h-6 text-gray-500 dark:text-gray-300" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-white">
-                        {preferences?.name}
-                      </span>
-                    </Link>
-                    {/* Current Language */}
                     <Link
                       to="/select-language-to-learn"
-                      className="flex items-center space-x-2 hover:text-blue-500"
+                      className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white text-sm font-medium"
                     >
-                      <Globe className="w-6 h-6 text-gray-500 dark:text-gray-300" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-white">
+                      Languages
+                    </Link>
+                  </div>
+                </div>
+                {/* Right Side: User Menu */}
+                <div className="flex items-center">
+                  {/* Language Selector */}
+                  <div className="hidden md:flex items-center">
+                    <Link
+                      to="/select-language-to-learn"
+                      className="flex items-center text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white"
+                    >
+                      <Globe className="w-5 h-5 mr-1" />
+                      <span className="text-sm font-medium">
                         {preferences?.currentLanguageToLearn}
                       </span>
                     </Link>
+                  </div>
+                  {/* User Dropdown */}
+                  <div className="relative ml-4">
+                    <button
+                      onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                      className="flex items-center text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white focus:outline-none"
+                    >
+                      <UserCog className="w-6 h-6" />
+                      <span className="ml-2 text-sm font-medium">
+                        {preferences?.name}
+                      </span>
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </button>
+                    {isUserMenuOpen && (
+                      <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5">
+                        <div className="py-1">
+                          <Link
+                            to="/user-preferences"
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          >
+                            Profile Settings
+                          </Link>
+                          <Link
+                            to="/select-language-to-learn"
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          >
+                            Change Language
+                          </Link>
+                          <button
+                            onClick={() => {
+                              // Handle logout action
+                            }}
+                            className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          >
+                            Log Out
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {/* Mobile Menu Button */}
                   <div className="md:hidden ml-2 flex items-center">
@@ -145,9 +173,9 @@ function SelectPartner() {
                       className="rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
                     >
                       {isMenuOpen ? (
-                        <X className="block h-6 w-6 text-gray-500 dark:text-gray-300" />
+                        <X className="block h-6 w-6 text-gray-700 dark:text-gray-300" />
                       ) : (
-                        <Menu className="block h-6 w-6 text-gray-500 dark:text-gray-300" />
+                        <Menu className="block h-6 w-6 text-gray-700 dark:text-gray-300" />
                       )}
                     </button>
                   </div>
@@ -161,48 +189,49 @@ function SelectPartner() {
                 <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                   <Link
                     to="/select-partner"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
                   >
                     Home
                   </Link>
                   <Link
-                    to="/user-preferences"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
-                  >
-                    Preferences
-                  </Link>
-                  <Link
-                    to="/select-language-to-learn"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
-                  >
-                    Languages
-                  </Link>
-                  <Link
-                      to="/words"
-                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                    to="/words"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
                   >
                     Dictionary
                   </Link>
-                  {/* User Info */}
+                  <Link
+                    to="/select-language-to-learn"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                  >
+                    Languages
+                  </Link>
+                  {/* User Menu */}
                   <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <Link
-                      to="/user-preferences"
-                      className="flex items-center px-5 hover:text-blue-500"
-                    >
-                      <UserCog className="w-6 h-6 text-gray-500 dark:text-gray-300" />
-                      <span className="ml-3 text-base font-medium text-gray-700 dark:text-white">
-                        {preferences?.name}
-                      </span>
-                    </Link>
-                    <Link
-                      to="/select-language-to-learn"
-                      className="flex items-center px-5 mt-2 hover:text-blue-500"
-                    >
-                      <Globe className="w-6 h-6 text-gray-500 dark:text-gray-300" />
-                      <span className="ml-3 text-base font-medium text-gray-700 dark:text-white">
-                        {preferences?.currentLanguageToLearn}
-                      </span>
-                    </Link>
+                    <div className="px-3">
+                      <Link
+                        to="/user-preferences"
+                        className="flex items-center py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white"
+                      >
+                        <UserCog className="w-5 h-5 mr-2" />
+                        Profile Settings
+                      </Link>
+                      <Link
+                        to="/select-language-to-learn"
+                        className="flex items-center py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white"
+                      >
+                        <Globe className="w-5 h-5 mr-2" />
+                        Change Language
+                      </Link>
+                      <button
+                        onClick={() => {
+                          // Handle logout action
+                        }}
+                        className="flex items-center w-full py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white"
+                      >
+                        <LogOut className="w-5 h-5 mr-2" />
+                        Log Out
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -217,6 +246,9 @@ function SelectPartner() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-12"
               >
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                  Welcome, {preferences?.name}
+                </h1>
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                   Choose Your Conversation Partner
                 </h2>
