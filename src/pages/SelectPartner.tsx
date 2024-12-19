@@ -58,7 +58,7 @@ const partners: Partner[] = [
 
 function SelectPartner() {
   const navigate = useNavigate();
-  const { preferences, isLoading } = useAppContext();
+  const { preferences, currentLanguage, isLoading } = useAppContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -123,7 +123,7 @@ function SelectPartner() {
                     >
                       <Globe className="w-5 h-5 mr-1" />
                       <span className="text-sm font-medium">
-                        {preferences?.currentLanguageToLearn}
+                        {currentLanguage?.name}
                       </span>
                     </Link>
                   </div>

@@ -16,13 +16,13 @@ function App() {
       <Routes>
         <Route element={<SimpleLayout />}>
           <Route path="/user-preferences" element={<UserPreferences />} />
-          <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
 
         <Route element={<AppProvider> <AppLayout /> </AppProvider>}>
+            <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
             <Route path="/select-partner" element={<SelectPartner />} />
             <Route path="/words" element={<WordsPage />} />
         </Route>
