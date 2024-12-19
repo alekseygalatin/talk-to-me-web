@@ -246,9 +246,6 @@ function SelectPartner() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-12"
               >
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  Welcome, {preferences?.name}
-                </h1>
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                   Choose Your Conversation Partner
                 </h2>
