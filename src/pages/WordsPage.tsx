@@ -13,12 +13,17 @@ interface Word {
 }
 
 const WordsPage: React.FC = () => {
+  const token = localStorage.getItem('idToken'); // Assume token is already stored
   const [words, setWords] = useState<Word[]>([]);
 
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const response = await fetch('http://localhost:5227/api/Words');
+        const response = await fetch('https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Words', {
+          method: 'get',
+          headers: new Headers({
+            'Authorization': token ?? ""
+          })});
         const data = await response.json();
         setWords(data);
       } catch (error) {

@@ -3,7 +3,6 @@ import { Play, Pause, Copy, Volume2, Check, BookmarkPlus } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
 import React, { forwardRef } from 'react';
-import { HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import { FaQuestionCircle } from 'react-icons/fa';
 import QuestionPopup from './QuestionPopup'; // Adjust the path as necessary
@@ -68,12 +67,12 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     const handleAddToDictionary = async () => {
       setIsAdding(true);
       try {
-        const response = await axios.post('http://localhost:5227/api/Words', {
+        const response = await axios.post('https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Words', {
           word: word,
           translation: translation.translation,
           example: translation.example_usage,
           includeIntoChat: true
-        });
+        }, { headers: { 'Content-Type': 'application/json', 'Authorization': token } });
 
         if (response.status === 200) {
           setIsAdded(true);
@@ -276,7 +275,7 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
       setIsQuestionPopupVisible(true);
 
       let response = await axios.post(
-          'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-question-help',
+          'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/conversationHelperAgent/text/invoke',
           message.text,
           { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
       );

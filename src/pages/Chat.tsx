@@ -54,7 +54,7 @@ function Chat() {
         setIsProcessing(true);
         try {
           const response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-story',
+            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/storyTailorAgent/invoke',
             {},  // empty body for POST request
             { 
               headers: { 
@@ -91,8 +91,62 @@ function Chat() {
         }
       }
     };
+
+    const fetchHi = async () => {
+      if (partnerId === "5") {
+        // Check for token first
+        const token = localStorage.getItem('idToken');
+        if (!token) {
+          console.error('No authentication token found');
+          return;
+        }
+
+        // Prevent duplicate calls
+        if (messages.length > 0) return;
+
+        setIsProcessing(true);
+        try {
+          const response = await axios.post(
+              'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/wordTeacherAgent/text/invoke',
+              "hej",
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token
+                }
+              }
+          );
+
+          let responseObject = JSON.parse(response.data.body);
+          const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
+          const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
+          const responseAudioURL = URL.createObjectURL(responseWavBlob);
+
+          const botMessage: Message = {
+            id: Date.now().toString(),
+            text: responseObject.Text,
+            isUser: false,
+            timestamp: new Date(),
+            audioUrl: responseAudioURL,
+          };
+
+          setMessages(prevMessages => {
+            // Only add if not already present
+            if (prevMessages.length === 0) {
+              return [botMessage];
+            }
+            return prevMessages;
+          });
+        } catch (error) {
+          console.error('Error fetching story:', error);
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
    
     fetchStory();
+    fetchHi();
   }, [partnerId, messages.length]);
 
   const handleSendMessage = async (text: string) => {
@@ -112,16 +166,23 @@ function Chat() {
       let response: any;
       if (partnerId === "4") { //get-story-feedback
         response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-story-feedback',
+            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/retailerAgent/promt/text/invoke',
             {
-              originText: messages[0].text,
-              retailText: text
+              promt: messages[0].text,
+              text: text
             },
             { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
         );
-      }else {
+      } else if (partnerId === "5") {
         response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/process-text',
+            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/wordTeacherAgent/text/invoke',
+            text,
+            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
+        );
+      }
+      else {
+        response = await axios.post(
+            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/conversationAgent/text/invoke',
             text,
             { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
         );
@@ -153,7 +214,7 @@ function Chat() {
     if (!token) return;
 
     const response = await axios.post(
-      'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/translate-word',
+      'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/translationAgent/text/invoke',
         word,
       { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
     );
@@ -220,6 +281,7 @@ function Chat() {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md"
+          onSettingsChange={x => {}}
           style={{ 
             top: 'env(safe-area-inset-top)',
             bottom: 'env(safe-area-inset-bottom)'

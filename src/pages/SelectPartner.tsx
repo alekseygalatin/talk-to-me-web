@@ -11,7 +11,7 @@ import {
   Briefcase,
   BookMarked,
   ChevronDown,
-  LogOut,
+  LogOut, TableProperties,
 } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import { useAppContext } from '../contexts/AppContext';
@@ -50,9 +50,16 @@ const partners: Partner[] = [
   {
     id: '4',
     name: 'Maria',
-    role: 'Story Teller',
-    description: 'A pretty good storyteller.',
+    role: 'Narrative Expert',
+    description: 'Captivating storyteller with a knack for weaving engaging tales.',
     icon: <BookMarked className="w-8 h-8 text-blue-500" />,
+  },
+  {
+    id: '5',
+    name: 'Emma',
+    role: 'Vocabulary Specialist',
+    description: 'Expert in vocabulary building and word usage.',
+    icon: <TableProperties className="w-8 h-8 text-blue-500" />,
   },
 ];
 
