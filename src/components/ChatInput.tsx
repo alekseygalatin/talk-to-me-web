@@ -71,7 +71,7 @@ export function ChatInput({
             resetTranscript();
             SpeechRecognition.startListening({
                 continuous: true,
-                language: preferences?.currentLanguageToLearn!
+                language: preferences?.currentLanguageToLearn ?? "sv-se"
             });
         }
     };

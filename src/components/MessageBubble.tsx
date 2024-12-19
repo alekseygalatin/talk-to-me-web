@@ -136,7 +136,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                   <button
                     onClick={() => {
                       const utterance = new SpeechSynthesisUtterance(word);
-                      utterance.lang = preferences?.currentLanguageToLearn!;
+                      utterance.lang = preferences?.currentLanguageToLearn ?? "sv-se";
                       utterance.rate = 0.9;
                       window.speechSynthesis.speak(utterance);
                     }}
