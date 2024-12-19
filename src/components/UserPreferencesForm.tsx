@@ -4,10 +4,12 @@ import { createUserPreferences, getUserPreferences, updateUserPreferences } from
 import AuthService from "../core/auth/authService";
 import { UserPreference } from "../models/UserPreference";
 import { useNavigate, useLocation  } from "react-router-dom";
+import Spinner from "./Spinner";
 
 const UserPreferencesForm: React.FC = () => {
   const userId: string | null = AuthService.getUserId();
   const { languages, isLoading } = useLanguages();
+  const [isSaving, setIsSaving] = useState(false);
 
   const [preferences, setPreference] = useState<UserPreference>({
     name: "",
@@ -55,6 +57,7 @@ const UserPreferencesForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       if (isEditing) {
         await updateUserPreferences(userId!, preferences!);
@@ -70,7 +73,12 @@ const UserPreferencesForm: React.FC = () => {
   };
 
   if (isLoading) {
-    return <p>Loading languages...</p>;
+    return (
+      <Spinner 
+        isLoading={isLoading}
+        global={false}
+      />
+    );
   }
 
   return (
@@ -84,13 +92,14 @@ const UserPreferencesForm: React.FC = () => {
                 value={preferences.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 required
+                disabled={isSaving}
                 />
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sex:</label>
                 <select 
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={preferences.sex} onChange={(e) => handleInputChange("sex", e.target.value)} required>
+                value={preferences.sex} onChange={(e) => handleInputChange("sex", e.target.value)} required disabled={isSaving}>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 </select>
@@ -102,6 +111,7 @@ const UserPreferencesForm: React.FC = () => {
                 value={preferences.nativeLanguage}
                 onChange={(e) => handleInputChange("nativeLanguage", e.target.value)}
                 required
+                disabled={isSaving}
                 >
                 {languages.map((lang) => (
                     <option key={lang.code} value={lang.code}>
@@ -112,7 +122,14 @@ const UserPreferencesForm: React.FC = () => {
             </div>
             <button 
             className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
-            type="submit">Save Preferences</button>
+            type="submit"
+            disabled={isSaving}>
+              {isSaving ? (
+                <div className="mx-2 w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Save Preferences '
+              )}
+            </button>
         </form>
     </div>
     

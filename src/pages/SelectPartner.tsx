@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import { User, BookOpen, Coffee, Briefcase, BookMarked} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import {User, BookOpen, Coffee, Briefcase, BookMarked, UserCog, Globe} from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import { useAppContext } from "../contexts/AppContext";
+import { HashLoader } from 'react-spinners';
+import Spinner from '../components/Spinner';
 
 
 interface Partner {
@@ -46,122 +47,117 @@ const partners: Partner[] = [
 ];
 
 function SelectPartner() {
+
   const navigate = useNavigate();
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const {preferences, isLoading} = useAppContext();
 
-  if (isLoading) {
-    return <p>Loading preferences...</p>; 
-  }
- 
   const handleSelectPartner = (partnerId: string) => {
     navigate(`/chat/${partnerId}`);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
-      {!isSidebarOpen && (
-        <button
-          className="fixed top-4 left-4 z-50 p-2 rounded-full shadow-lg transition-transform transform hover:scale-110"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <div className="space-y-1">
-            <span className="block w-6 h-0.5 bg-gray-900 dark:bg-white"></span>
-            <span className="block w-6 h-0.5 bg-gray-900 dark:bg-white"></span>
-            <span className="block w-6 h-0.5 bg-gray-900 dark:bg-white"></span>
-          </div>
-        </button>
-      )}
-
-      <motion.div
-        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg z-40 transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        initial={{ x: '-100%' }}
-        animate={{ x: isSidebarOpen ? 0 : '-100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      >
-        <div className="p-6">
-          <button
-            className="text-gray-900 dark:text-white mb-6"
-            onClick={() => setSidebarOpen(false)}
-          >
-            ✕
-          </button>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Menu</h2>
-          <Link
-            to="/home"
-            className="block text-gray-900 dark:text-white font-semibold mb-4 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-300"
-            onClick={() => setSidebarOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            to="/profile"
-            className="block text-gray-900 dark:text-white font-semibold mb-4 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-300"
-            onClick={() => setSidebarOpen(false)}
-          >
-            Profile
-          </Link>
-          <Link
-            to="/words"
-            className="block text-gray-900 dark:text-white font-semibold mb-4 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-300"
-            onClick={() => setSidebarOpen(false)}
-          >
-            Words
-          </Link>
-          {/* Add more links as needed */}
+      {isLoading ? (
+        <div>
+          <Spinner 
+          isLoading={isLoading}
+          label={'Loading preferences...'}
+          global={true}/>
         </div>
-      </motion.div>
-
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Welcome, {preferences?.name}
-          </h1>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Choose Your Conversation Partner
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Select the perfect partner for your language learning journey
-          </p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {partners.map((partner, index) => (
-            <motion.div
-              key={partner.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleSelectPartner(partner.id)}
-            >
-              <div className="flex items-start space-x-4">
-                <div className="p-3 bg-blue-50 dark:bg-gray-700 rounded-lg">
-                  {partner.icon}
-                </div>
+      ) : (
+        <div className="max-w-4xl mx-auto">
+          <div className='flex justify-between mb-4'>
+            <div>
+                {/*<label className='block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300'>
+                  User preferences
+                </label>*/}
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
-                    {partner.name}
-                  </h3>
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
-                    {partner.role}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    {partner.description}
-                  </p>
+                  <div className='inline-block p-2'>
+                    <UserCog className='font-semibold text-gray-900 dark:text-white' />
+                  </div>
+                  <div className='px-2 inline-block'>
+                      <h5 className='font-semibold text-gray-900 dark:text-white'>{preferences?.name}</h5>
+                      <Link
+                          to="/user-preferences"
+                          className="font-medium hover:underline text-blue-600 dark:text-white"
+                        >
+                          Settings
+                        </Link>
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          ))}
-        </div>
+              <div>
+                {/*<label className='block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300'>
+                  Language to learn
+                </label>*/}
+                <div>
+                  <div className='inline-block p-2'>
+                    <Globe className='font-semibold text-gray-900 dark:text-white' />
+                  </div>
+                  <div className='px-2 inline-block'>
+                      <h5 className='font-semibold text-gray-900 dark:text-white'>{preferences?.currentLanguageToLearn}</h5>
+                      <Link
+                          to="/select-language-to-learn"
+                          className="font-medium hover:underline text-blue-600 dark:text-white"
+                        >
+                          Change
+                        </Link>
+                  </div>
+                </div>
+              </div>
+          </div>
+        <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Welcome, {preferences?.name}
+        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Choose Your Conversation Partner
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          Select the perfect partner for your language learning journey
+        </p>
+      </motion.div>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {partners.map((partner, index) => (
+          <motion.div
+            key={partner.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleSelectPartner(partner.id)}
+          >
+            <div className="flex items-start space-x-4">
+              <div className="p-3 bg-blue-50 dark:bg-gray-700 rounded-lg">
+                {partner.icon}
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                  {partner.name}
+                </h3>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
+                  {partner.role}
+                </p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">
+                  {partner.description}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
+      </div>
+      )}
+        
+        
+     
+      
     </div>
   );
 }
