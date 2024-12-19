@@ -6,6 +6,8 @@ import { ChatInput } from '../components/ChatInput';
 import { MessageSquare } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
+import Header from '../components/Header';
+import { SettingsSidebar } from '../components/SettingsSidebar';
 
 interface Message {
   id: string;
@@ -22,6 +24,8 @@ function Chat() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current && chatContainerRef.current) {
@@ -162,7 +166,7 @@ function Chat() {
     <div 
       className='flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-900'
       style={{ 
-        height: '90dvh',
+        height: '100dvh',
       }}
     >
       <div 
@@ -172,11 +176,14 @@ function Chat() {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
+        <Header openSidebar={() => setIsSidebarOpen(true)}/>
        
         <div 
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto"
         >
+          
+          
           <div className="p-4 pt-6">
             {messages.map((message) => (
               <MessageBubble
@@ -209,6 +216,15 @@ function Chat() {
           </div>
         </div>
       </div>
+      <SettingsSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md"
+          style={{ 
+            top: 'env(safe-area-inset-top)',
+            bottom: 'env(safe-area-inset-bottom)'
+          }}
+        />
     </div>
   );
 }

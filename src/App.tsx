@@ -13,18 +13,19 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route element={<AppProvider> <AppLayout /> </AppProvider>}>
-            <Route path="/select-partner" element={<SelectPartner />} />
-            <Route path="/chat/:partnerId" element={<Chat />} />
-        </Route>
-        <Route path="/user-preferences" element={<UserPreferences />} />
-        <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
-        
         <Route element={<SimpleLayout />}>
+          <Route path="/user-preferences" element={<UserPreferences />} />
+          <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+
+        <Route element={<AppProvider> <AppLayout /> </AppProvider>}>
+          <Route path="/select-partner" element={<SelectPartner />} />
+        </Route>
+
+        <Route path="/chat/:partnerId" element={<AppProvider><Chat /></AppProvider>}/>
       </Routes>
     </Router>
   );

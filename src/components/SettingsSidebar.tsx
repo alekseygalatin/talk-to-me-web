@@ -1,29 +1,18 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserCog, Globe } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAppContext } from "../contexts/AppContext";
-import { useNavigate } from 'react-router-dom';
-import { Link } from "react-router-dom";
-
-/*interface Settings {
-  theme: 'light' | 'dark';
-  language: string;
-  volume: number;
-  microphoneSensitivity: number;
-}
-*/
+import { ProfileSettings } from '../models/ProfileSettings';
 
 interface SettingsSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  /*settings: Settings;
-  onSettingsChange: (key: keyof Settings, value: any) => void;*/
+  settings: ProfileSettings;
+  onSettingsChange: (key: keyof ProfileSettings, value: any) => void;
 }
 
-export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
+export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }: SettingsSidebarProps) {
 
-  const {theme, toggleTheme, preferences, isLoading} = useAppContext();
-
-  const navigate = useNavigate();
+  const {theme, toggleTheme} = useAppContext();
 
   return (
     <AnimatePresence>
@@ -79,68 +68,7 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
                   <span className='text-gray-900 dark:text-white'>Dark mode</span>
                 </div>
               </div>
-            <div>
-                <label className='block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300'>
-                  User preferences
-                </label>
-                <div>
-                  <div className='inline-block p-2'>
-                    <UserCog className='font-semibold text-gray-900 dark:text-white' />
-                  </div>
-                  <div className='px-2 inline-block'>
-                      <h5 className='font-semibold text-gray-900 dark:text-white'>{preferences?.name}</h5>
-                      <Link
-                          to="/user-preferences"
-                          className="font-medium hover:underline text-blue-600 dark:text-white"
-                        >
-                          Settings
-                        </Link>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className='block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300'>
-                  Language to learn
-                </label>
-                <div>
-                  <div className='inline-block p-2'>
-                    <Globe className='font-semibold text-gray-900 dark:text-white' />
-                  </div>
-                  <div className='px-2 inline-block'>
-                      <h5 className='font-semibold text-gray-900 dark:text-white'>{preferences?.currentLanguageToLearn}</h5>
-                      <Link
-                          to="/select-language-to-learn"
-                          className="font-medium hover:underline text-blue-600 dark:text-white"
-                        >
-                          Change
-                        </Link>
-                  </div>
-                </div>
-              </div>
-              
             
-              
-              {/*<div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  settings.theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Language
-                </label>
-                <select
-                  value={settings.language}
-                  onChange={(e) => onSettingsChange('language', e.target.value)}
-                  className={`w-full p-2 rounded-lg border ${
-                    settings.theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                >
-                  <option value="sv-SE">Swedish</option>
-                  <option value="en-US">English</option>
-                  <option value="es-ES">Spanish</option>
-                </select>
-              </div>
-
               <div>
                 <label className='block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300'>
                   Volume
@@ -149,8 +77,8 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
                   type="range"
                   min="0"
                   max="100"
-                  value={settings.volume}
-                  onChange={(e) => onSettingsChange('volume', Number(e.target.value))}
+                  value={settings?.volume}
+                  //onChange={(e) => onSettingsChange('volume', Number(e.target.value))}
                   className="w-full"
                 />
               </div>
@@ -163,11 +91,11 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
                   type="range"
                   min="0"
                   max="100"
-                  value={settings.microphoneSensitivity}
-                  onChange={(e) => onSettingsChange('microphoneSensitivity', Number(e.target.value))}
+                  value={settings?.microphoneSensitivity}
+                  //onChange={(e) => onSettingsChange('microphoneSensitivity', Number(e.target.value))}
                   className="w-full"
                 />
-              </div>*/}
+              </div>
             </div>
           </motion.div>
         </>
