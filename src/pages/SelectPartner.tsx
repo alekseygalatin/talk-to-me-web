@@ -177,6 +177,12 @@ function SelectPartner() {
                   >
                     Languages
                   </Link>
+                  <Link
+                      to="/words"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                  >
+                    Dictionary
+                  </Link>
                   {/* User Info */}
                   <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-4">
                     <Link
