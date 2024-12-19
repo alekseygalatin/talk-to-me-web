@@ -5,6 +5,7 @@ import UserPreferences from "./pages/UserPreferences"
 import SelectLanguageToLearn from './pages/SelectLanguageToLearn';
 import { default as SelectPartner } from './pages/SelectPartner';
 import { default as Chat } from './pages/Chat'; // Your existing chat component
+import { default as WordsPage } from './pages/WordsPage';
 import AppLayout from './layouts/AppLayout';
 import SimpleLayout from './layouts/SimpleLayout';
 import { AppProvider } from './contexts/AppContext';
@@ -22,7 +23,8 @@ function App() {
         </Route>
 
         <Route element={<AppProvider> <AppLayout /> </AppProvider>}>
-          <Route path="/select-partner" element={<SelectPartner />} />
+            <Route path="/select-partner" element={<SelectPartner />} />
+            <Route path="/words" element={<WordsPage />} />
         </Route>
 
         <Route path="/chat/:partnerId" element={<AppProvider><Chat /></AppProvider>}/>
