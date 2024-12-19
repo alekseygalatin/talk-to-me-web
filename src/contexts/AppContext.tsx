@@ -3,9 +3,12 @@ import { getUserPreferences } from '../api/userPreferencesApi';
 import { UserPreference } from '../models/UserPreference';
 import AuthService from '../core/auth/authService';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Language } from "../models/Language";
+import { getLanguage } from "../api/languagesApi";
 
 interface AppContextType {
   preferences: UserPreference | null;
+  currentLanguage: Language | null;
   isLoading: boolean;
   theme: string;
   toggleTheme: () => void;
@@ -40,6 +43,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const userId: string | null = AuthService.getUserId(); 
   const [preferences, setPreference] = useState<UserPreference | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState<Language | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -54,7 +58,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         if (!fetchedPreferences.currentLanguageToLearn) {
           navigate(`/select-language-to-learn`, { state: { returnTo: location.pathname } });
+        } else {
+          const fetchedCurrentLanguage: Language = await getLanguage(fetchedPreferences.currentLanguageToLearn);
+          setCurrentLanguage(fetchedCurrentLanguage);
         }
+        setIsLoading(false);
 
       } catch (error: any) {
         if (error.response && error.response.status === 404) {
@@ -63,19 +71,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } else {
           console.error("Error fetching user preferences:", error);
         }
-      } finally {
         setIsLoading(false);
-      }
+      } 
     };
 
     fetchPreferences();
   }, [userId, navigate, location.pathname]); 
 
-
-
   return (
     <AppContext.Provider
-      value={{ theme, toggleTheme, preferences, isLoading }}
+      value={{ preferences, currentLanguage, isLoading, theme, toggleTheme }}
     >
       {children}
     </AppContext.Provider>

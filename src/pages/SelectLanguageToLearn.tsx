@@ -7,6 +7,7 @@ import { setCurrentLanguageToLearn } from '../api/userPreferencesApi';
 import AuthService from '../core/auth/authService';
 import Spinner from '../components/Spinner';
 import React, { useState } from "react";
+import { useAppContext } from '../contexts/AppContext';
 
 const SelectLanguageToLearn: React.FC = () => {
     const userId = AuthService.getUserId();
@@ -14,6 +15,7 @@ const SelectLanguageToLearn: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSaving, setIsSaving ] = useState(false);
+    const { preferences } = useAppContext();
 
     const handleSelectLanguage = async (languageCode: string) => {
       setIsSaving(true);
@@ -66,7 +68,7 @@ const SelectLanguageToLearn: React.FC = () => {
                   onClick={() => handleSelectLanguage(language.code)}
                 >
                   <div className="flex items-start space-x-4">
-                    <div className="p-3 bg-blue-50 dark:bg-gray-700 rounded-lg">
+                    <div className={`p-3 rounded-lg ${preferences?.currentLanguageToLearn == language.code ? 'bg-blue-900 text-white' : 'bg-blue-50 dark:bg-gray-700 dark:text-white'}`}>
                     <Globe />
                     </div>
                     <div>
