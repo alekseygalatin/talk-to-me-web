@@ -3,6 +3,7 @@ import { withAuth } from '../components/withAuth';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Book, Plus, Search } from 'lucide-react';
+import {getWords} from "../api/dictionaryApi.ts";
 
 interface Word {
   word: string;
@@ -13,18 +14,13 @@ interface Word {
 }
 
 const WordsPage: React.FC = () => {
-  const token = localStorage.getItem('idToken'); // Assume token is already stored
   const [words, setWords] = useState<Word[]>([]);
 
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const response = await fetch('https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Words', {
-          method: 'get',
-          headers: new Headers({
-            'Authorization': token ?? ""
-          })});
-        const data = await response.json();
+        const response = await getWords();
+        const data = response.data;
         setWords(data);
       } catch (error) {
         console.error('Error fetching words:', error);

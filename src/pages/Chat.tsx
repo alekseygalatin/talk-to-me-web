@@ -8,6 +8,14 @@ import { withAuth } from '../components/withAuth';
 import '../chat.css';
 import Header from '../components/Header';
 import { SettingsSidebar } from '../components/SettingsSidebar';
+import {
+  invokeConversationAgent,
+  invokeRetailerAgent,
+  invokeStoryTailorAgent,
+  invokeTranslationAgent,
+  invokeWordTeacherAgent
+} from "../api/agentsApi.ts";
+import {useAppContext} from "../contexts/AppContext.tsx";
 
 interface Message {
   id: string;
@@ -24,7 +32,7 @@ function Chat() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
-
+  const { preferences } = useAppContext();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const scrollToBottom = () => {
@@ -53,16 +61,7 @@ function Chat() {
         
         setIsProcessing(true);
         try {
-          const response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/storyTailorAgent/invoke',
-            {},  // empty body for POST request
-            { 
-              headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': token 
-              } 
-            }
-          );
+          const response = await invokeStoryTailorAgent(preferences?.currentLanguageToLearn!)
 
           let responseObject = JSON.parse(response.data.body);
           const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
@@ -106,17 +105,7 @@ function Chat() {
 
         setIsProcessing(true);
         try {
-          const response = await axios.post(
-              'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/wordTeacherAgent/text/invoke',
-              "hej",
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': token
-                }
-              }
-          );
-
+          let response = await invokeWordTeacherAgent("hej", preferences?.currentLanguageToLearn!);
           let responseObject = JSON.parse(response.data.body);
           const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
           const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
@@ -165,27 +154,12 @@ function Chat() {
     try {
       let response: any;
       if (partnerId === "4") { //get-story-feedback
-        response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/retailerAgent/promt/text/invoke',
-            {
-              promt: messages[0].text,
-              text: text
-            },
-            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-        );
+        response = await invokeRetailerAgent(messages[0].text, text, preferences?.currentLanguageToLearn!)
       } else if (partnerId === "5") {
-        response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/wordTeacherAgent/text/invoke',
-            text,
-            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-        );
+        response = await invokeWordTeacherAgent(text, preferences?.currentLanguageToLearn!)
       }
       else {
-        response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/conversationAgent/text/invoke',
-            text,
-            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-        );
+        response = await invokeConversationAgent(text, preferences?.currentLanguageToLearn!)
       }
       
       let responseObject = JSON.parse(response.data.body);
@@ -213,11 +187,7 @@ function Chat() {
   const onTranslate = useCallback(async (word: string) => {
     if (!token) return;
 
-    const response = await axios.post(
-      'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Agents/translationAgent/text/invoke',
-        word,
-      { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-    );
+    const response = await invokeTranslationAgent(word, preferences?.currentLanguageToLearn!)
     
     let responseObject = JSON.parse(response.data.body);
     return JSON.parse(responseObject.Text);
