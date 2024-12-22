@@ -4,7 +4,8 @@ import {
   BookOpen,
   Coffee,
   Briefcase,
-  BookMarked TableProperties,
+  BookMarked, 
+  TableProperties,
 } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import { useAppContext } from '../contexts/AppContext';
