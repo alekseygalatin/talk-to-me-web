@@ -3,6 +3,7 @@ import { withAuth } from '../components/withAuth';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Book, Plus, Search } from 'lucide-react';
+import {getWords} from "../api/dictionaryApi.ts";
 
 interface Word {
   word: string;
@@ -18,8 +19,8 @@ const WordsPage: React.FC = () => {
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const response = await fetch('http://localhost:5227/api/Words');
-        const data = await response.json();
+        const response = await getWords();
+        const data = response.data;
         setWords(data);
       } catch (error) {
         console.error('Error fetching words:', error);

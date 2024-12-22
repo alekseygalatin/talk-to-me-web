@@ -43,7 +43,7 @@ export function Login() {
     const cognitoUser = new CognitoUser(userData);
     cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: async (session) => {
-        const token = session.getIdToken().getJwtToken();
+        const token = session.getAccessToken().getJwtToken();
         AuthService.storeToken(token);
         const userId = AuthService.getUserId();
         if (userId) {
@@ -64,7 +64,7 @@ export function Login() {
         if (newPassword) {
           cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
             onSuccess: (session) => {
-              const token = session.getIdToken().getJwtToken();
+              const token = session.getAccessToken().getJwtToken();
               AuthService.storeToken(token);
               setIsLoading(false);
               navigate('/select-partner');

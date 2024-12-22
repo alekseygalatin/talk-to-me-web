@@ -7,6 +7,14 @@ import { MessageSquare } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
 import { SettingsSidebar } from '../components/SettingsSidebar';
+import {
+  invokeConversationAgent,
+  invokeRetailerAgent,
+  invokeStoryTailorAgent,
+  invokeTranslationAgent,
+  invokeWordTeacherAgent
+} from "../api/agentsApi.ts";
+import {useAppContext} from "../contexts/AppContext.tsx";
 import ChatHeader from '../components/ChatHeader';
 
 interface Message {
@@ -24,7 +32,7 @@ function Chat() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const token = localStorage.getItem('idToken'); // Assume token is already stored
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
-
+  const { preferences } = useAppContext();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const scrollToBottom = () => {
@@ -53,17 +61,51 @@ function Chat() {
         
         setIsProcessing(true);
         try {
-          const response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-story',
-            {},  // empty body for POST request
-            { 
-              headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': token 
-              } 
-            }
-          );
+          const response = await invokeStoryTailorAgent(preferences?.currentLanguageToLearn!)
 
+          let responseObject = JSON.parse(response.data.body);
+          const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
+          const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
+          const responseAudioURL = URL.createObjectURL(responseWavBlob);
+
+          const botMessage: Message = {
+            id: Date.now().toString(),
+            text: responseObject.Text,
+            isUser: false,
+            timestamp: new Date(),
+            audioUrl: responseAudioURL,
+          };
+
+          setMessages(prevMessages => {
+            // Only add if not already present
+            if (prevMessages.length === 0) {
+              return [botMessage];
+            }
+            return prevMessages;
+          });
+        } catch (error) {
+          console.error('Error fetching story:', error);
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
+
+    const fetchHi = async () => {
+      if (partnerId === "5") {
+        // Check for token first
+        const token = localStorage.getItem('idToken');
+        if (!token) {
+          console.error('No authentication token found');
+          return;
+        }
+
+        // Prevent duplicate calls
+        if (messages.length > 0) return;
+
+        setIsProcessing(true);
+        try {
+          let response = await invokeWordTeacherAgent("hej", preferences?.currentLanguageToLearn!);
           let responseObject = JSON.parse(response.data.body);
           const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
           const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
@@ -93,6 +135,7 @@ function Chat() {
     };
    
     fetchStory();
+    fetchHi();
   }, [partnerId, messages.length]);
 
   const handleSendMessage = async (text: string) => {
@@ -111,20 +154,12 @@ function Chat() {
     try {
       let response: any;
       if (partnerId === "4") { //get-story-feedback
-        response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-story-feedback',
-            {
-              originText: messages[0].text,
-              retailText: text
-            },
-            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-        );
-      }else {
-        response = await axios.post(
-            'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/process-text',
-            text,
-            { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-        );
+        response = await invokeRetailerAgent(messages[0].text, text, preferences?.currentLanguageToLearn!)
+      } else if (partnerId === "5") {
+        response = await invokeWordTeacherAgent(text, preferences?.currentLanguageToLearn!)
+      }
+      else {
+        response = await invokeConversationAgent(text, preferences?.currentLanguageToLearn!)
       }
       
       let responseObject = JSON.parse(response.data.body);
@@ -152,11 +187,7 @@ function Chat() {
   const onTranslate = useCallback(async (word: string) => {
     if (!token) return;
 
-    const response = await axios.post(
-      'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/translate-word',
-        word,
-      { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-    );
+    const response = await invokeTranslationAgent(word, preferences?.currentLanguageToLearn!)
     
     let responseObject = JSON.parse(response.data.body);
     return JSON.parse(responseObject.Text);
@@ -220,6 +251,7 @@ function Chat() {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md"
+          onSettingsChange={x => {}}
           style={{ 
             top: 'env(safe-area-inset-top)',
             bottom: 'env(safe-area-inset-bottom)'

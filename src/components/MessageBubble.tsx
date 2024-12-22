@@ -3,11 +3,11 @@ import { Play, Pause, Copy, Volume2, Check, BookmarkPlus } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
 import React, { forwardRef } from 'react';
-import { HelpCircle } from 'lucide-react';
-import axios from 'axios';
 import { FaQuestionCircle } from 'react-icons/fa';
 import QuestionPopup from './QuestionPopup'; // Adjust the path as necessary
 import { useAppContext } from '../contexts/AppContext';
+import {addWordToDictionary} from "../api/dictionaryApi.ts";
+import {invokeConversationHelperAgent} from "../api/agentsApi.ts";
 
 interface MessageBubbleProps {
   message: Message;
@@ -68,13 +68,8 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     const handleAddToDictionary = async () => {
       setIsAdding(true);
       try {
-        const response = await axios.post('http://localhost:5227/api/Words', {
-          word: word,
-          translation: translation.translation,
-          example: translation.example_usage,
-          includeIntoChat: true
-        });
-
+        const response = await addWordToDictionary(word, translation.translation, translation.example_usage);
+        
         if (response.status === 200) {
           setIsAdded(true);
           setTimeout(() => setIsAdded(false), 2000); // Reset after 2 seconds
@@ -137,7 +132,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                   <button
                     onClick={() => {
                       const utterance = new SpeechSynthesisUtterance(word);
-                      utterance.lang = preferences?.currentLanguageToLearn!;
+                      utterance.lang = preferences?.currentLanguageToLearn ?? "sv-se";
                       utterance.rate = 0.9;
                       window.speechSynthesis.speak(utterance);
                     }}
@@ -232,7 +227,8 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
     note: string;
   } | null>(null);
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
-
+  const { preferences } = useAppContext();
+  
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -274,13 +270,8 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
     try {
       setIsLoadingQuestion(true);
       setIsQuestionPopupVisible(true);
-
-      let response = await axios.post(
-          'https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api/Transcribe/get-question-help',
-          message.text,
-          { headers: { 'Content-Type': 'application/json', 'Authorization': token } }
-      );
-
+      
+      let response = await invokeConversationHelperAgent(message.text, preferences?.currentLanguageToLearn!)
       let responseObject = JSON.parse(response.data.body);
       const data = JSON.parse(responseObject.Text);
 
