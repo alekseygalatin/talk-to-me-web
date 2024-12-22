@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { CognitoUser, AuthenticationDetails, CognitoUserPool } from 'amazon-cognito-identity-js';
 import AuthService from '../core/auth/authService';
+import { getUserPreferences } from '../api/userPreferencesApi';
+import { useAppContext } from '../contexts/AppContext';
 
 const poolData = {
   UserPoolId: 'us-east-1_walDCpNcK',
@@ -18,6 +20,9 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { setPreferences } = useAppContext();
+
+  AuthService.clearToken();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +39,17 @@ export function Login() {
       Username: email,
       Pool: userPool
     };
-    const cognitoUser = new CognitoUser(userData);
 
+    const cognitoUser = new CognitoUser(userData);
     cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: (session) => {
+      onSuccess: async (session) => {
         const token = session.getAccessToken().getJwtToken();
         AuthService.storeToken(token);
+        const userId = AuthService.getUserId();
+        if (userId) {
+          const preferences = await getUserPreferences(userId);
+          setPreferences(preferences); 
+        }
         setIsLoading(false);
         navigate('/select-partner');
       },
