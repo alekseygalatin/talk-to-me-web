@@ -6,8 +6,8 @@ import { ChatInput } from '../components/ChatInput';
 import { MessageSquare } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
-import Header from '../components/Header';
 import { SettingsSidebar } from '../components/SettingsSidebar';
+import ChatHeader from '../components/ChatHeader';
 
 interface Message {
   id: string;
@@ -176,7 +176,7 @@ function Chat() {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        <Header openSidebar={() => setIsSidebarOpen(true)}/>
+        <ChatHeader openSidebar={() => setIsSidebarOpen(true)}/>
        
         <div 
           ref={chatContainerRef}
