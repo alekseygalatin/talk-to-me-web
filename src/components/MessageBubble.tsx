@@ -13,6 +13,7 @@ interface MessageBubbleProps {
   message: Message;
   onTranslate: (word: string, token: string) => Promise<any>;
   token: string | null;
+  onPlayAudio: (text: string) => Promise<string>;
 }
 
 interface WordPopupProps {
@@ -207,7 +208,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
 
 export default WordPopup;
 
-export function MessageBubble({ message, onTranslate, token }: MessageBubbleProps) {
+export function MessageBubble({ message, onTranslate, token, onPlayAudio }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
     position: { x: number; y: number };
@@ -229,12 +230,26 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
   const { preferences } = useAppContext();
   
-  const toggleAudio = () => {
+  const toggleAudio = async () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        var url = await onPlayAudio(message.text);
+        audioRef.current = new Audio(url);
+        audioRef.current.addEventListener('canplaythrough', () => {
+          audioRef.current?.play().catch(error => {
+            console.error('Error playing audio:', error);
+          });
+        });
+
+        audioRef.current.addEventListener('error', (e) => {
+          console.error('Audio error:', e);
+        });
+
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio directly:', error);
+        });
       }
       setIsPlaying(!isPlaying);
     }

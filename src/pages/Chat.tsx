@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
 import { MessageSquare } from 'lucide-react';
@@ -16,6 +15,7 @@ import {
   invokeWordTeacherAgent
 } from "../api/agentsApi.ts";
 import {useAppContext} from "../contexts/AppContext.tsx";
+import { fetchAudioForMessage } from '../api/audioApi'; // Import the new API function
 
 interface Message {
   id: string;
@@ -193,6 +193,20 @@ function Chat() {
     return JSON.parse(responseObject.Text);
   }, [token]);
 
+  const handlePlayAudio = async (message: string) : Promise<string> => {
+    try {
+      const response = await fetchAudioForMessage("sv-se", message);
+      const audioBytes = Uint8Array.from(atob(response), c => c.charCodeAt(0));
+      const audioBlob = new Blob([audioBytes], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log(audioUrl)
+      return audioUrl;
+    } catch (error) {
+      console.error('Error fetching audio:', error);
+      return "";
+    }
+  };
+
   return (
     <div 
       className='flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-900'
@@ -222,6 +236,7 @@ function Chat() {
                 message={message}
                 onTranslate={onTranslate}
                 token={token}
+                onPlayAudio={text => handlePlayAudio(text)}
               />
             ))}
             {isProcessing && (
