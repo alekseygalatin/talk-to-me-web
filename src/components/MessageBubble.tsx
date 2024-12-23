@@ -401,7 +401,7 @@ export function MessageBubble({ message, onTranslate, token, onPlayAudio }: Mess
                 )}
               </button>
             )}
-            {message.audioUrl && (
+            {!message.isUser && (
               <div className="mt-2 flex items-center gap-2">
                 <button
                   onClick={toggleAudio}
