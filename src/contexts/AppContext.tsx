@@ -1,15 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { getUserPreferences } from '../api/userPreferencesApi';
 import { UserPreference } from '../models/UserPreference';
-import AuthService from '../core/auth/authService';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Language } from "../models/Language";
-import { getLanguage } from "../api/languagesApi";
 
 interface AppContextType {
   preferences: UserPreference | null;
+  setPreferences: React.Dispatch<React.SetStateAction<UserPreference | null>>;
   currentLanguage: Language | null;
-  isLoading: boolean;
+  setCurrentLanguage: React.Dispatch<React.SetStateAction<Language | null>>;
+  isInitialized: boolean;
+  setIsInitialized: React.Dispatch<React.SetStateAction<boolean>>;
   theme: string;
   toggleTheme: () => void;
 }
@@ -17,9 +16,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
   const [theme, setTheme] = useState<string>(() => {
     return localStorage.getItem('theme') || 'light';
   });
@@ -41,46 +37,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const userId: string | null = AuthService.getUserId(); 
-  const [preferences, setPreference] = useState<UserPreference | null>(null);
+  const [preferences, setPreferences] = useState<UserPreference | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState<Language | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPreferences = async () => {
-      if (!userId) {
-        navigate("/login");
-        return; 
-      }
-      try {
-        const fetchedPreferences: UserPreference = await getUserPreferences(userId);
-        setPreference(fetchedPreferences); 
-
-        if (!fetchedPreferences.currentLanguageToLearn) {
-          navigate(`/select-language-to-learn`, { state: { returnTo: location.pathname } });
-        } else {
-          const fetchedCurrentLanguage: Language = await getLanguage(fetchedPreferences.currentLanguageToLearn);
-          setCurrentLanguage(fetchedCurrentLanguage);
-        }
-        setIsLoading(false);
-
-      } catch (error: any) {
-        if (error.response && error.response.status === 404) {
-          navigate("/user-preferences", { state: { returnTo: location.pathname } });
-          return;
-        } else {
-          console.error("Error fetching user preferences:", error);
-        }
-        setIsLoading(false);
-      } 
-    };
-
-    fetchPreferences();
-  }, [userId, navigate, location.pathname]); 
+  const [isInitialized, setIsInitialized] = useState(false);
+  
 
   return (
     <AppContext.Provider
-      value={{ preferences, currentLanguage, isLoading, theme, toggleTheme }}
+      value={{ preferences, setPreferences, currentLanguage, setCurrentLanguage, isInitialized, setIsInitialized, theme, toggleTheme }}
     >
       {children}
     </AppContext.Provider>

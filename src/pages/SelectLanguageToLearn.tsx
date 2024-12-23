@@ -22,13 +22,15 @@ const SelectLanguageToLearn: React.FC = () => {
       try {
         await setCurrentLanguageToLearn(userId!, languageCode);
         const returnTo = location.state?.returnTo || "/select-partner";
-        setIsSaving(false);
         navigate(returnTo); 
       }
       catch(error) {
         setIsSaving(false);
         console.error("Error saving current language", error);
         alert("Failed to set language.");
+      }
+      finally {
+        setIsSaving(false);
       }
     };
 

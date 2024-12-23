@@ -5,9 +5,22 @@ const apiClient = axios.create({
   //baseURL: "https://localhost:7099/api",
   baseURL: "http://localhost:5227/api",
   headers: {
-    "Authorization": `${AuthService.getToken()}`,
     "Content-Type": "application/json", 
   },
+  timeout: 15000
 });
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = AuthService.getToken();
+    if (token) {
+      config.headers["Authorization"] = `${token}`; 
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;
