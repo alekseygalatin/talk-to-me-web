@@ -287,7 +287,7 @@ export function MessageBubble({ message, onTranslate, token, onPlayAudio }: Mess
         });
       };
     }
-  }, []);
+  }, [audioRef.current]);
 
   const handleQuestionClick = async () => {
     try {
