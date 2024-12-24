@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
 import { MessageSquare } from 'lucide-react';
@@ -225,7 +224,7 @@ function Chat() {
               />
             ))}
             {isProcessing && (
-              <div className='flex justify-center py-2 text-gray-600 dark:text-gray-400'>
+              <div className='flex justify-left py-2 text-gray-600 dark:text-gray-400'>
                 <MessageSquare className="w-5 h-5 animate-bounce" />
               </div>
             )}
@@ -250,12 +249,6 @@ function Chat() {
       <SettingsSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
-          className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md"
-          onSettingsChange={x => {}}
-          style={{ 
-            top: 'env(safe-area-inset-top)',
-            bottom: 'env(safe-area-inset-bottom)'
-          }}
         />
     </div>
   );

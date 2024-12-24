@@ -30,7 +30,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ openSidebar }) => {
             </div>
             <button
                 onClick={ openSidebar }
-                className='p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 text-gray-300'
+                className='p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300'
             >
             <Settings className="w-5 h-5" />
             </button>
