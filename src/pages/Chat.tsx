@@ -15,6 +15,7 @@ import {
 } from "../api/agentsApi.ts";
 import {useAppContext} from "../contexts/AppContext.tsx";
 import ChatHeader from '../components/ChatHeader';
+import { fetchAudioForMessage } from '../api/audioApi'; // Import the new API function
 
 interface Message {
   id: string;
@@ -61,18 +62,14 @@ function Chat() {
         setIsProcessing(true);
         try {
           const response = await invokeStoryTailorAgent(preferences?.currentLanguageToLearn!)
-
           let responseObject = JSON.parse(response.data.body);
-          const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
-          const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
-          const responseAudioURL = URL.createObjectURL(responseWavBlob);
-
+          
           const botMessage: Message = {
             id: Date.now().toString(),
             text: responseObject.Text,
             isUser: false,
             timestamp: new Date(),
-            audioUrl: responseAudioURL,
+            audioUrl: "",
           };
 
           setMessages(prevMessages => {
@@ -106,16 +103,13 @@ function Chat() {
         try {
           let response = await invokeWordTeacherAgent("hej", preferences?.currentLanguageToLearn!);
           let responseObject = JSON.parse(response.data.body);
-          const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
-          const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
-          const responseAudioURL = URL.createObjectURL(responseWavBlob);
-
+          
           const botMessage: Message = {
             id: Date.now().toString(),
             text: responseObject.Text,
             isUser: false,
             timestamp: new Date(),
-            audioUrl: responseAudioURL,
+            audioUrl: "",
           };
 
           setMessages(prevMessages => {
@@ -162,16 +156,13 @@ function Chat() {
       }
       
       let responseObject = JSON.parse(response.data.body);
-      const audioBytes = Uint8Array.from(atob(responseObject.Audio), c => c.charCodeAt(0));
-      const responseWavBlob = new Blob([audioBytes], { type: 'audio/wav' });
-      const responseAudioURL = URL.createObjectURL(responseWavBlob);
 
       const botMessage: Message = {
         id: Date.now().toString(),
         text: responseObject.Text,
         isUser: false,
         timestamp: new Date(),
-        audioUrl: responseAudioURL,
+        audioUrl: "",
       };
 
       setMessages((prevMessages) => [...prevMessages, botMessage]);
@@ -191,6 +182,20 @@ function Chat() {
     let responseObject = JSON.parse(response.data.body);
     return JSON.parse(responseObject.Text);
   }, [token]);
+
+  const handlePlayAudio = async (message: string) : Promise<string> => {
+    try {
+      const response = await fetchAudioForMessage(preferences?.currentLanguageToLearn!, message);
+      const audioBytes = Uint8Array.from(atob(response), c => c.charCodeAt(0));
+      const audioBlob = new Blob([audioBytes], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log(audioUrl)
+      return audioUrl;
+    } catch (error) {
+      console.error('Error fetching audio:', error);
+      return "";
+    }
+  };
 
   return (
     <div 
@@ -221,6 +226,7 @@ function Chat() {
                 message={message}
                 onTranslate={onTranslate}
                 token={token}
+                onPlayAudio={text => handlePlayAudio(text)}
               />
             ))}
             {isProcessing && (

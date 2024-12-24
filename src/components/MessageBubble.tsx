@@ -13,6 +13,7 @@ interface MessageBubbleProps {
   message: Message;
   onTranslate: (word: string, token: string) => Promise<any>;
   token: string | null;
+  onPlayAudio: (text: string) => Promise<string>;
 }
 
 interface WordPopupProps {
@@ -207,7 +208,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
 
 export default WordPopup;
 
-export function MessageBubble({ message, onTranslate, token }: MessageBubbleProps) {
+export function MessageBubble({ message, onTranslate, token, onPlayAudio }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
     position: { x: number; y: number };
@@ -228,13 +229,35 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
   } | null>(null);
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
   const { preferences } = useAppContext();
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   
-  const toggleAudio = () => {
+  const toggleAudio = async () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        setIsAudioLoading(true); // Start loading
+        try {
+          var url = await onPlayAudio(message.text);
+          audioRef.current = new Audio(url);
+          audioRef.current.addEventListener('canplaythrough', () => {
+            audioRef.current?.play().catch(error => {
+              console.error('Error playing audio:', error);
+            });
+          });
+
+          audioRef.current.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+          });
+
+          audioRef.current.play().catch(error => {
+            console.error('Error playing audio directly:', error);
+          });
+        } catch (error) {
+          console.error('Error fetching audio URL:', error);
+        } finally {
+          setIsAudioLoading(false); // End loading
+        }
       }
       setIsPlaying(!isPlaying);
     }
@@ -264,7 +287,7 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
         });
       };
     }
-  }, []);
+  }, [audioRef.current]);
 
   const handleQuestionClick = async () => {
     try {
@@ -378,13 +401,15 @@ export function MessageBubble({ message, onTranslate, token }: MessageBubbleProp
                 )}
               </button>
             )}
-            {message.audioUrl && (
+            {!message.isUser && (
               <div className="mt-2 flex items-center gap-2">
                 <button
                   onClick={toggleAudio}
                   className="p-2 rounded-full hover:bg-black/10 transition-colors"
                 >
-                  {isPlaying ? (
+                  {isAudioLoading ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-t-transparent border-gray-600 rounded-full"></div>
+                  ) : isPlaying ? (
                     <Pause className="w-4 h-4"/>
                   ) : (
                     <Play className="w-4 h-4"/>
