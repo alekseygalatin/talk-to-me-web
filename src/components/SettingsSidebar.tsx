@@ -1,18 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useAppContext } from "../contexts/AppContext";
-import { ProfileSettings } from '../models/ProfileSettings';
+import { useChatSettings } from '../contexts/ChatSettingsContext';
 
 interface SettingsSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  settings: ProfileSettings;
-  onSettingsChange: (key: keyof ProfileSettings, value: any) => void;
 }
 
-export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }: SettingsSidebarProps) {
+export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
 
   const {theme, toggleTheme} = useAppContext();
+  const { chatSettings, updateSetting } = useChatSettings();
 
   return (
     <AnimatePresence>
@@ -29,7 +28,7 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            className='fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-6 dark:bg-gray-800'
+            className='fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-6 dark:bg-gray-800 z-50'
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
@@ -37,7 +36,7 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
               </h2>
               <button
                 onClick={onClose}
-                className='p-2 rounded-lg hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 text-gray-300'
+                className='p-2 rounded-lg hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300'
               >
                 <X className="w-5 h-5" />
               </button>
@@ -77,8 +76,8 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
                   type="range"
                   min="0"
                   max="100"
-                  value={settings?.volume}
-                  //onChange={(e) => onSettingsChange('volume', Number(e.target.value))}
+                  value={chatSettings.volume}
+                  onChange={(e) => updateSetting('volume', Number(e.target.value))}
                   className="w-full"
                 />
               </div>
@@ -91,8 +90,21 @@ export function SettingsSidebar({ isOpen, onClose, settings, onSettingsChange }:
                   type="range"
                   min="0"
                   max="100"
-                  value={settings?.microphoneSensitivity}
-                  //onChange={(e) => onSettingsChange('microphoneSensitivity', Number(e.target.value))}
+                  value={chatSettings.microphoneSensitivity}
+                  onChange={(e) => updateSetting('microphoneSensitivity', Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300'>
+                  Language Proficiency Level
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  value={chatSettings.langaugeLevel}
+                  onChange={(e) => updateSetting('langaugeLevel', Number(e.target.value))}
                   className="w-full"
                 />
               </div>

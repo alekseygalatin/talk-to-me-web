@@ -10,6 +10,7 @@ import AppLayout from './layouts/AppLayout';
 import SimpleLayout from './layouts/SimpleLayout';
 import { AppProvider } from './contexts/AppContext';
 import AppInitializer from './pages/AppInitializer';
+import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 
 function App() {
   return (
@@ -42,8 +43,8 @@ function App() {
                           <Route path="/words" element={<WordsPage />} />
                         </Route>
                         <Route element={<SimpleLayout />}>
-                          <Route path="/chat/:partnerId" element={<Chat />} />
                         </Route>
+                        <Route path="/chat/:partnerId" element={<ChatSettingsProvider><Chat /></ChatSettingsProvider>} />
                       </Routes>
                     </AppInitializer>
                   }
