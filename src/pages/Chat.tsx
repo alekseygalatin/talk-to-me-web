@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
@@ -10,7 +10,6 @@ import {
   invokeConversationAgent,
   invokeRetailerAgent,
   invokeStoryTailorAgent,
-  invokeTranslationAgent,
   invokeWordTeacherAgent
 } from "../api/agentsApi.ts";
 import {useAppContext} from "../contexts/AppContext.tsx";
@@ -173,16 +172,6 @@ function Chat() {
     }
   };
 
-
-  const onTranslate = useCallback(async (word: string) => {
-    if (!token) return;
-
-    const response = await invokeTranslationAgent(word, preferences?.currentLanguageToLearn!)
-    
-    let responseObject = JSON.parse(response.data.body);
-    return JSON.parse(responseObject.Text);
-  }, [token]);
-
   const handlePlayAudio = async (message: string) : Promise<string> => {
     try {
       const response = await fetchAudioForMessage(preferences?.currentLanguageToLearn!, message);
@@ -224,7 +213,6 @@ function Chat() {
               <MessageBubble
                 key={message.id}
                 message={message}
-                onTranslate={onTranslate}
                 token={token}
                 onPlayAudio={text => handlePlayAudio(text)}
               />
