@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { withAuth } from '../components/withAuth';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Book, Plus, Search } from 'lucide-react';
 import {getWords} from "../api/dictionaryApi.ts";
-
-interface Word {
-  word: string;
-  translation: string;
-  transcript: string;
-  example: string;
-  includeIntoChat: boolean;
-}
+import { Word } from '../models/Word.ts';
 
 const WordsPage: React.FC = () => {
   const [words, setWords] = useState<Word[]>([]);
@@ -19,9 +11,8 @@ const WordsPage: React.FC = () => {
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const response = await getWords();
-        const data = response.data;
-        setWords(data);
+        const words = await getWords();
+        setWords(words);
       } catch (error) {
         console.error('Error fetching words:', error);
       }
@@ -29,6 +20,8 @@ const WordsPage: React.FC = () => {
 
     fetchWords();
   }, []);
+
+  console.log(words);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
@@ -100,7 +93,9 @@ const WordsPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {word.translation}
+                      { word.translations.map((text, index) => (
+                          `${index + 1}. ${text}; `
+                      ))}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
                       {word.example}

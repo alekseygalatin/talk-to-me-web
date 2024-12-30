@@ -1,17 +1,15 @@
+import { Word } from "../models/Word";
 import apiClient from "./apiClient";
 
-export const addWordToDictionary = async (word: string, translation: string, example: string): Promise<any> => {
-  return await apiClient.post(`/words`,
-      {
-          word: word,
-          translation: translation,
-          example: example,
-          includeIntoChat: true
-      });
+export const addWordToDictionary = async (word: Word) => {
+    const response = await apiClient.post(`/words`, word);
+    return response.data;
 }
 
-export const getWords = async (): Promise<any> => {
-    return await apiClient.get(`/words`);
+export const getWords = async (): Promise<Word[]> => {
+    const response = await apiClient.get(`/words`);
+    console.log(response);
+    return response.data;
 }
   
   
