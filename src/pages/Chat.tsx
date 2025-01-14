@@ -14,7 +14,8 @@ import {
 } from "../api/agentsApi.ts";
 import {useAppContext} from "../contexts/AppContext.tsx";
 import ChatHeader from '../components/ChatHeader';
-import { fetchAudioForMessage } from '../api/audioApi'; // Import the new API function
+import { fetchAudioForMessage } from '../api/audioApi';
+import { fetchHistory } from "../api/historyApi.ts"; // Import the new API function
 
 interface Message {
   id: string;
@@ -135,21 +136,23 @@ function Chat() {
 
       setIsProcessing(true);
       try {
-        let response = await invokeConversationAgent("", preferences?.currentLanguageToLearn!);
-        let responseObject = JSON.parse(response.data.body);
-
-        const botMessage: Message = {
-          id: Date.now().toString(),
-          text: responseObject.Text,
-          isUser: false,
-          timestamp: new Date(),
-          audioUrl: "",
-        };
+        let response = await fetchHistory(preferences?.currentLanguageToLearn!, 'conversationAgent');
+        
+        let messages = [];
+        for (let obj of response) {
+          messages.push({
+            id: Date.now().toString(),
+            text: obj.message,
+            isUser: obj.isUser,
+            timestamp: obj.dateTime,
+            audioUrl: "",
+          })
+        }
 
         setMessages(prevMessages => {
           // Only add if not already present
           if (prevMessages.length === 0) {
-            return [botMessage];
+            return [...messages];
           }
           return prevMessages;
         });
