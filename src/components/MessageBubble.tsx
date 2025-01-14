@@ -21,7 +21,6 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const popupRef = useRef<HTMLDivElement | null>(null);
   const [isQuestionPopupVisible, setIsQuestionPopupVisible] = useState(false);
   const [apiResponse, setApiResponse] = useState<{
     suggestedAnswer: string;
@@ -243,7 +242,6 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
 
       {selectedWord && (
         <WordPopup
-          ref={popupRef}
           word={selectedWord}
           onClose={() => setSelectedWord(null)}
           setSelectedWord={setSelectedWord}

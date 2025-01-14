@@ -1,7 +1,7 @@
 export interface Word {
+    language: string;
     word: string;
     transcription: string;
-    wordForm: string;
     baseFormWord: string;
     translations: string[]
     example: string;

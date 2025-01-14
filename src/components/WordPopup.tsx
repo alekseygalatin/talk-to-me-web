@@ -66,7 +66,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
     const handleAddToDictionary = async () => {
       setIsAdding(true);
       try {
-        const response = await addWordToDictionary(translation!);
+        const response = await addWordToDictionary(preferences?.currentLanguageToLearn!, translation!);
         
         if (response.status === 200) {
           setIsAdded(true);
