@@ -47,87 +47,128 @@ function Chat() {
 
   useEffect(() => {
     const fetchStory = async () => {
-      if (partnerId === "4") {
-        // Check for token first
-        const token = localStorage.getItem('idToken');
-        if (!token) {
-          console.error('No authentication token found');
-          return;
-        }
+      // Check for token first
+      const token = localStorage.getItem('idToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
 
-        // Prevent duplicate calls
-        if (messages.length > 0) return;
+      // Prevent duplicate calls
+      if (messages.length > 0) return;
+      
+      setIsProcessing(true);
+      try {
+        const response = await invokeStoryTailorAgent(preferences?.currentLanguageToLearn!)
+        let responseObject = JSON.parse(response.data.body);
         
-        setIsProcessing(true);
-        try {
-          const response = await invokeStoryTailorAgent(preferences?.currentLanguageToLearn!)
-          let responseObject = JSON.parse(response.data.body);
-          
-          const botMessage: Message = {
-            id: Date.now().toString(),
-            text: responseObject.Text,
-            isUser: false,
-            timestamp: new Date(),
-            audioUrl: "",
-          };
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          text: responseObject.Text,
+          isUser: false,
+          timestamp: new Date(),
+          audioUrl: "",
+        };
 
-          setMessages(prevMessages => {
-            // Only add if not already present
-            if (prevMessages.length === 0) {
-              return [botMessage];
-            }
-            return prevMessages;
-          });
-        } catch (error) {
-          console.error('Error fetching story:', error);
-        } finally {
-          setIsProcessing(false);
-        }
+        setMessages(prevMessages => {
+          // Only add if not already present
+          if (prevMessages.length === 0) {
+            return [botMessage];
+          }
+          return prevMessages;
+        });
+      } catch (error) {
+        console.error('Error fetching story:', error);
+      } finally {
+        setIsProcessing(false);
       }
     };
 
     const fetchHi = async () => {
-      if (partnerId === "5") {
-        // Check for token first
-        const token = localStorage.getItem('idToken');
-        if (!token) {
-          console.error('No authentication token found');
-          return;
+      // Check for token first
+      const token = localStorage.getItem('idToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      // Prevent duplicate calls
+      if (messages.length > 0) return;
+
+      setIsProcessing(true);
+      try {
+        let response = await invokeWordTeacherAgent("", preferences?.currentLanguageToLearn!);
+        let responseObject = JSON.parse(response.data.body);
+        
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          text: responseObject.Text,
+          isUser: false,
+          timestamp: new Date(),
+          audioUrl: "",
+        };
+
+        setMessages(prevMessages => {
+          // Only add if not already present
+          if (prevMessages.length === 0) {
+            return [botMessage];
+          }
+          return prevMessages;
+        });
+      } catch (error) {
+        console.error('Error fetching story:', error);
+      } finally {
+        setIsProcessing(false);
         }
+    };
 
-        // Prevent duplicate calls
-        if (messages.length > 0) return;
+    const fetchMessage = async () => {
+      // Check for token first
+      const token = localStorage.getItem('idToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
 
-        setIsProcessing(true);
-        try {
-          let response = await invokeWordTeacherAgent("hej", preferences?.currentLanguageToLearn!);
-          let responseObject = JSON.parse(response.data.body);
-          
-          const botMessage: Message = {
-            id: Date.now().toString(),
-            text: responseObject.Text,
-            isUser: false,
-            timestamp: new Date(),
-            audioUrl: "",
-          };
+      // Prevent duplicate calls
+      if (messages.length > 0) return;
 
-          setMessages(prevMessages => {
-            // Only add if not already present
-            if (prevMessages.length === 0) {
-              return [botMessage];
-            }
-            return prevMessages;
-          });
-        } catch (error) {
-          console.error('Error fetching story:', error);
-        } finally {
-          setIsProcessing(false);
-        }
+      setIsProcessing(true);
+      try {
+        let response = await invokeConversationAgent("", preferences?.currentLanguageToLearn!);
+        let responseObject = JSON.parse(response.data.body);
+
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          text: responseObject.Text,
+          isUser: false,
+          timestamp: new Date(),
+          audioUrl: "",
+        };
+
+        setMessages(prevMessages => {
+          // Only add if not already present
+          if (prevMessages.length === 0) {
+            return [botMessage];
+          }
+          return prevMessages;
+        });
+      } catch (error) {
+        console.error('Error fetching story:', error);
+      } finally {
+        setIsProcessing(false);
       }
     };
-   
-    fetchStory();
-    fetchHi();
+    
+    if (partnerId == "4") {
+      fetchStory();
+    }
+    else if (partnerId == "5") {
+      fetchHi();
+    }
+    else {
+      fetchMessage();
+    }
   }, [partnerId, messages.length]);
 
   const handleSendMessage = async (text: string) => {
