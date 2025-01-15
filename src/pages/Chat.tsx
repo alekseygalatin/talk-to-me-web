@@ -85,7 +85,7 @@ function Chat() {
       }
     };
 
-    const fetchHi = async () => {
+    const fetchChatHistory = async (agent) => {
       // Check for token first
       const token = localStorage.getItem('idToken');
       if (!token) {
@@ -98,45 +98,7 @@ function Chat() {
 
       setIsProcessing(true);
       try {
-        let response = await invokeWordTeacherAgent("", preferences?.currentLanguageToLearn!);
-        let responseObject = JSON.parse(response.data.body);
-        
-        const botMessage: Message = {
-          id: Date.now().toString(),
-          text: responseObject.Text,
-          isUser: false,
-          timestamp: new Date(),
-          audioUrl: "",
-        };
-
-        setMessages(prevMessages => {
-          // Only add if not already present
-          if (prevMessages.length === 0) {
-            return [botMessage];
-          }
-          return prevMessages;
-        });
-      } catch (error) {
-        console.error('Error fetching story:', error);
-      } finally {
-        setIsProcessing(false);
-        }
-    };
-
-    const fetchMessage = async () => {
-      // Check for token first
-      const token = localStorage.getItem('idToken');
-      if (!token) {
-        console.error('No authentication token found');
-        return;
-      }
-
-      // Prevent duplicate calls
-      if (messages.length > 0) return;
-
-      setIsProcessing(true);
-      try {
-        let response = await fetchHistory(preferences?.currentLanguageToLearn!, 'conversationAgent');
+        let response = await fetchHistory(preferences?.currentLanguageToLearn!, agent);
         
         let messages = [];
         for (let obj of response) {
@@ -167,10 +129,10 @@ function Chat() {
       fetchStory();
     }
     else if (partnerId == "5") {
-      fetchHi();
+      fetchChatHistory('wordTeacherAgent');
     }
     else {
-      fetchMessage();
+      fetchChatHistory('conversationAgent');
     }
   }, [partnerId, messages.length]);
 
