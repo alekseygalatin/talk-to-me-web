@@ -13,10 +13,11 @@ interface WordPopupProps {
   word: string;
   onClose: () => void;
   setSelectedWord:(word:string) => void;
+  onWordAdded?: () => void;
 }
 
 const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
-    ({ word, onClose, setSelectedWord }, ref) => {
+    ({ word, onClose, setSelectedWord, onWordAdded}, ref) => {
       const [translation, setTranslation] = useState<Word | null>(null);
       const [isLoading, setIsLoading] = useState(false);
       const translateRequestRef = useRef<AbortController | null>(null);
@@ -68,9 +69,12 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
       try {
         const response = await addWordToDictionary(preferences?.currentLanguageToLearn!, translation!);
         
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 204) {
           setIsAdded(true);
-          setTimeout(() => setIsAdded(false), 2000); // Reset after 2 seconds
+
+          if (onWordAdded) {
+            await onWordAdded();
+          }
         }
       } catch (error) {
         console.error('Error adding word to dictionary:', error);
@@ -113,17 +117,17 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                         onClick={handleAddToDictionary}
                         className={`p-2 rounded-lg transition-colors text-gray-600 dark:text-gray-300 ${
                           isAdding 
-                            ? 'bg-gray-500 text-white' 
+                            ? 'bg-gray-300 text-white' 
                             : isAdded 
-                            ? 'bg-green-500 text-white' 
+                            ? 'bg-green-300 text-white' 
                             : 'dark:hover:bg-gray-700 dark:text-gray-300'
                         }`}
                         title="Add to Dictionary"
-                        disabled={isAdding}
-                        animate={isAdded ? { scale: 1.1, backgroundColor: '#34D399' } : { scale: 1 }}
+                        disabled={isAdding || isAdded}
+                        animate={isAdded ? { backgroundColor: '#34D399' } : { }}
                         transition={{ type: 'spring', stiffness: 300 }}
                       >
-                        {isAdded ? <Check className="w-5 h-5" /> : <BookmarkPlus className="w-5 h-5" />}
+                         <BookmarkPlus className="w-5 h-5" />
                       </motion.button>
                     </div>
                   </div>
