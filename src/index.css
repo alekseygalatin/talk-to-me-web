@@ -42,7 +42,8 @@ html {
 }
 
 body {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior-y: none;
   position: fixed;
   width: 100%;
