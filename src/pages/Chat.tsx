@@ -186,7 +186,7 @@ function Chat() {
     } else if (partnerId == "5") {
       fetchData(); // Call the new async function
     } else {
-      fetchChatHistory('conversationAgent');
+      //fetchChatHistory('conversationAgent');
     }
   }, [partnerId, messages.length]);
 
