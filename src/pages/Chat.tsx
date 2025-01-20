@@ -172,7 +172,7 @@ function Chat() {
 
       setIsProcessing(true);
       try {
-        await fetchChatHistory('wordTeacherAgent'); // Wait for this to complete
+        //await fetchChatHistory('wordTeacherAgent'); // Wait for this to complete
         await fetchInitialMessageForEmma(); // Then call this
       } catch (error) {
         console.error('Error fetching data:', error);
