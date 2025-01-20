@@ -85,6 +85,40 @@ function Chat() {
       }
     };
 
+    const fetchInitialMessageForEmma = async () => {
+      // Check for token first
+      const token = localStorage.getItem('idToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      // Prevent duplicate calls
+      if (messages.length > 0) return;
+
+      setIsProcessing(true);
+      try {
+        const response = await invokeWordTeacherAgent('', preferences?.currentLanguageToLearn!)
+        let responseObject = JSON.parse(response.data.body);
+
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          text: responseObject.Text,
+          isUser: false,
+          timestamp: new Date(),
+          audioUrl: "",
+        };
+
+        setMessages(prevMessages => {
+          return [...prevMessages, botMessage];
+        });
+      } catch (error) {
+        console.error('Error fetching story:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
     const fetchChatHistory = async (agent) => {
       // Check for token first
       const token = localStorage.getItem('idToken');
@@ -125,13 +159,33 @@ function Chat() {
       }
     };
     
+    const fetchData = async () => {
+      // Check for token first
+      const token = localStorage.getItem('idToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      // Prevent duplicate calls
+      if (messages.length > 0) return;
+
+      setIsProcessing(true);
+      try {
+        await fetchChatHistory('wordTeacherAgent'); // Wait for this to complete
+        await fetchInitialMessageForEmma(); // Then call this
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
     if (partnerId == "4") {
       fetchStory();
-    }
-    else if (partnerId == "5") {
-      fetchChatHistory('wordTeacherAgent');
-    }
-    else {
+    } else if (partnerId == "5") {
+      fetchData(); // Call the new async function
+    } else {
       fetchChatHistory('conversationAgent');
     }
   }, [partnerId, messages.length]);
