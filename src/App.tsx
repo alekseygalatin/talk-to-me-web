@@ -11,6 +11,15 @@ import SimpleLayout from './layouts/SimpleLayout';
 import { AppProvider } from './contexts/AppContext';
 import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
+import { Amplify } from 'aws-amplify';
+
+Amplify.configure({
+  Auth: {
+    region: "eu-north-1",
+    userPoolId: "us-east-1_walDCpNcK",
+    userPoolWebClientId: "7o8tqlt2ucihqsbtthfopc9d4p"
+  },
+})
 
 function App() {
   return (
