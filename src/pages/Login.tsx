@@ -1,86 +1,37 @@
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Auth } from 'aws-amplify';
+import { motion } from 'framer-motion';
 import { MessageSquare } from 'lucide-react';
-import { CognitoUser, AuthenticationDetails, CognitoUserPool } from 'amazon-cognito-identity-js';
-import AuthService from '../core/auth/authService';
-import { getUserPreferences } from '../api/userPreferencesApi';
 import { useAppContext } from '../contexts/AppContext';
-
-const poolData = {
-  UserPoolId: 'us-east-1_walDCpNcK',
-  ClientId: '7o8tqlt2ucihqsbtthfopc9d4p'
-};
-
-const userPool = new CognitoUserPool(poolData);
+import { getUserPreferences } from "../api/userPreferencesApi.ts";
+import AuthService from '../core/auth/authService';
 
 export function Login() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const { setPreferences } = useAppContext();
 
-  AuthService.clearToken();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const authenticationData = {
-      Username: email,
-      Password: password,
-    };
-    const authenticationDetails = new AuthenticationDetails(authenticationData);
-
-    const userData = {
-      Username: email,
-      Pool: userPool
-    };
-
-    const cognitoUser = new CognitoUser(userData);
-    cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: async (session) => {
-        const token = session.getAccessToken().getJwtToken();
-        AuthService.storeToken(token);
-        const userId = AuthService.getUserId();
-        if (userId) {
-          const preferences = await getUserPreferences(userId);
-          setPreferences(preferences); 
-        }
-        setIsLoading(false);
-        navigate('/select-partner');
-      },
-      onFailure: (err) => {
-        setError(err.message || 'An error occurred during login');
-        setIsLoading(false);
-        console.error('Login error:', err);
-      },
-      newPasswordRequired: (userAttributes, requiredAttributes) => {
-        // Prompt user for new password
-        const newPassword = prompt('Please enter a new password:');
-        if (newPassword) {
-          cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
-            onSuccess: (session) => {
-              const token = session.getAccessToken().getJwtToken();
-              AuthService.storeToken(token);
-              setIsLoading(false);
-              navigate('/select-partner');
-            },
-            onFailure: (err) => {
-              setError(err.message || 'An error occurred during password change');
-              setIsLoading(false);
-              console.error('Password change error:', err);
-            },
-          });
-        } else {
-          setError('Password change was cancelled');
-          setIsLoading(false);
-        }
-      },
-    });
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      AuthService.clearToken();
+      await Auth.signIn(username, password);
+      const user = await Auth.currentAuthenticatedUser();
+      const userId = user.username;
+      const token = user.signInUserSession.accessToken.jwtToken;
+      AuthService.storeToken(token);
+      if (userId) {
+        const preferences = await getUserPreferences(userId);
+        setPreferences(preferences);
+      }
+      navigate('/select-partner');
+    } catch (err) {
+      setError('Failed to sign in. Please check your credentials and try again.');
+      console.error('Error signing in:', err);
+    }
   };
 
   return (
@@ -110,14 +61,14 @@ export function Login() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email
+                Username
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your email"
+                placeholder="Enter your username"
                 required
               />
             </div>
@@ -139,13 +90,8 @@ export function Login() {
             <button
               type="submit"
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
-              disabled={isLoading}
             >
-              {isLoading ? (
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                'Sign In'
-              )}
+              Login
             </button>
           </form>
         </div>
