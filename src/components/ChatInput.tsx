@@ -1,10 +1,9 @@
 import {useState, useEffect, useRef} from 'react';
-import {Mic, Send, Loader2, MicOff, Info} from 'lucide-react';
-import SpeechRecognition, {useSpeechRecognition} from 'react-speech-recognition';
+import {Mic, Send, Loader2, MicOff} from 'lucide-react';
 import {TipsDialog} from './TipsDialog';
 import {useAppContext} from '../contexts/AppContext';
 import {experimentalSettingsManager} from "../core/ExperimentalSettingsManager.ts";
-import { useWebSocket } from '../api/WebSocketApi/WebsocketService.ts';
+import {useTranscriber} from "../core/Transcriber/useTranscriber.ts";
 
 interface ChatInputProps {
     onSendMessage: (text: string) => void;
@@ -16,17 +15,12 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
     const [isTipsOpen, setIsTipsOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const experimentalSettings = experimentalSettingsManager.getSettings();
-    const { messages, sendMessage } = useWebSocket("wss://your-websocket-url");
-    const [input, setInput] = useState("");
-
 
     const {
-        transcript,
-        listening,
-        resetTranscript,
-        browserSupportsSpeechRecognition,
+        transcriber,
+        isSpeechRecognitionSupported,
         isMicrophoneAvailable,
-    } = useSpeechRecognition();
+    } = useTranscriber(experimentalSettings, 'wss://your-websocket-url');
 
     const {preferences} = useAppContext();
 
@@ -34,15 +28,15 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
 
-        if (!listening && transcript) {
+        if (!transcriber.isRecording && transcriber.transcript) {
             // Small delay to ensure we have the final transcript
             timeoutId = setTimeout(() => {
-                const finalMessage = transcript.trim();
+                const finalMessage = transcriber.transcript.trim();
                 if (finalMessage) {
                     onSendMessage(finalMessage);
                     setMessage('');
                 }
-                resetTranscript();
+                transcriber.clearTranscript();
             }, 500);
         }
 
@@ -51,7 +45,7 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
                 clearTimeout(timeoutId);
             }
         };
-    }, [listening, transcript, onSendMessage]);
+    }, [transcriber.isRecording, transcriber.transcript, onSendMessage, transcriber.clearTranscript]);
 
     // Adjust textarea height dynamically
     useEffect(() => {
@@ -80,19 +74,20 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
     };
 
     const toggleListening = () => {
-        if (listening) {
-            SpeechRecognition.stopListening();
+        // Handle SpeechRecognition
+        if (transcriber.isRecording) {
+            transcriber.stopTranscript();
         } else {
-            setMessage(''); // Clear any existing message when starting to listen
-            resetTranscript();
-            SpeechRecognition.startListening({
+            setMessage(""); // Clear the current message
+            transcriber.clearTranscript();
+            transcriber.startTranscript({
                 continuous: true,
                 language: preferences?.currentLanguageToLearn ?? "sv-se",
             });
         }
     };
 
-    if (!browserSupportsSpeechRecognition) {
+    if (!isSpeechRecognitionSupported) {
         return (
             <div className="text-center p-4 text-red-500">
                 Browser doesn't support speech recognition.
@@ -107,14 +102,14 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
               dark:text-white dark:placeholder-gray-400 p-3'>
             <textarea
                 ref={textareaRef}
-                value={listening ? transcript : message}
+                value={transcriber.isRecording ? transcriber.transcript : message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={listening ? 'Listening...' : 'Type a message...'}
+                placeholder={transcriber.isRecording ? 'Listening...' : 'Type a message...'}
                 className={`w-8/12 sm:w-10/12  border-0 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 px-1
                     dark:text-white dark:placeholder-gray-400 resize-none focus:outline-none`}
                 style={{maxHeight: '120px', overflow: 'auto'}} // Set max height for 6 lines
-                disabled={isProcessing || listening}
+                disabled={isProcessing || transcriber.isRecording}
             />
                     <div className="w-4/12 sm:w-2/12 flex items-end justify-end gap-2">
                         {isMicrophoneAvailable ? (
@@ -122,14 +117,14 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
                                 type="button"
                                 onClick={toggleListening}
                                 className={`p-2.5 rounded-full transition-all ${
-                                    listening
+                                    transcriber.isRecording
                                         ? 'bg-red-500 text-white animate-pulse hover:bg-red-600'
                                         : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                                 }`}
                                 disabled={isProcessing}
-                                title={listening ? 'Stop listening' : 'Start listening'}
+                                title={transcriber.isRecording ? 'Stop listening' : 'Start listening'}
                             >
-                                {listening ? (
+                                {transcriber.isRecording ? (
                                     <MicOff className="w-5 h-5"/>
                                 ) : (
                                     <Mic className="w-5 h-5"/>
@@ -147,7 +142,7 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
                         )}
                         <button
                             type="submit"
-                            disabled={!message.trim() || isProcessing || listening}
+                            disabled={!message.trim() || isProcessing || transcriber.isRecording}
                             className="p-2.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600
                     text-white disabled:hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white dark:disabled:hover:bg-blue-600"
                         >

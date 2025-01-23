@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
-export const useWebSocket = (url: string) => {
-    const [messages, setMessages] = useState<any[]>([]); // Stores received messages
+export const useWebSocket = (url: string | null) => {
+    const [webSocketMessage, setMessages] = useState<any>(); // Stores received messages
     const socketRef = useRef<WebSocket | null>(null); // WebSocket instance reference
-    const [isConnected, setIsConnected] = useState(false);
+    const [isWebSocketConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
+
+        if (!url) {
+            return; // Do not initiate connection if no URL is provided
+        }
+
         // Initialize WebSocket connection
         const socket = new WebSocket(url);
         socketRef.current = socket;
@@ -19,7 +24,7 @@ export const useWebSocket = (url: string) => {
         // Handle incoming messages
         socket.onmessage = (event) => {
             console.log("Message from server:", event.data);
-            setMessages((prev) => [...prev, event.data]); // Append message to state
+            setMessages(() => event.data); // Append message to state
         };
 
         // Handle connection close
@@ -41,7 +46,7 @@ export const useWebSocket = (url: string) => {
     }, [url]);
 
     // Function to send a message
-    const sendMessage = (message: any) => {
+    const sendWebSocketMessage = (message: any) => {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             socketRef.current.send(message);
         } else {
@@ -49,5 +54,5 @@ export const useWebSocket = (url: string) => {
         }
     };
 
-    return { messages, sendMessage, isConnected };
+    return { webSocketMessage, sendWebSocketMessage, isWebSocketConnected };
 };
