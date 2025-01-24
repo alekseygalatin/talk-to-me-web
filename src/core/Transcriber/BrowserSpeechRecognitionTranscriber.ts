@@ -1,7 +1,10 @@
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { Transcriber, TranscriberStartParams } from './Transcriber';
+import {Transcriber, TranscriberStartParams, TranscriptResult} from './Transcriber';
+import {useEffect, useState} from "react";
 
 export const useSpeechRecognitionTranscriber = (): Transcriber => {
+    const [transcriptResult, setTranscript] = useState<TranscriptResult | null>(null);
+
     const {
         transcript,
         listening,
@@ -29,11 +32,19 @@ export const useSpeechRecognitionTranscriber = (): Transcriber => {
         resetTranscript();
     };
 
+    useEffect(() => {
+        const transcriptResult: TranscriptResult = {
+            isFinal: true,
+            transcript: transcript
+        };
+        setTranscript(() => transcriptResult);
+    }, [transcript]);
+
     return {
         startTranscript,
         stopTranscript,
         clearTranscript,
-        transcript,
+        transcript: transcriptResult,
         isRecording: listening
     };
 };

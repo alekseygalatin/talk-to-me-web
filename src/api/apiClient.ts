@@ -4,7 +4,7 @@ import { experimentalSettingsManager } from "../core/ExperimentalSettingsManager
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 const apiClient = axios.create({
-    baseURL: experimentalSettings.UseStreamTranscription
+    baseURL: experimentalSettings.UseLocalBackEnd
         ? "https://localhost:7099/api" // Local development
         : "https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api", // Production
     headers: {

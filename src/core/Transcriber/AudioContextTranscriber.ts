@@ -1,20 +1,23 @@
-import {useState, useRef} from 'react';
+import {useState, useRef, useEffect} from 'react';
 import {useWebSocket} from "../../api/WebSocketApi/WebsocketService.ts";
-import {Transcriber, TranscriberStartParams} from "./Transcriber.ts";
+import {Transcriber, TranscriberStartParams, TranscriptResult} from "./Transcriber.ts";
 
 export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcriber => {
-    const [transcript, setTranscript] = useState('');
+    const [transcript, setTranscript] = useState<TranscriptResult | null>(null);
     const [isRecording, setIsRecording] = useState(false);
 
     const audioContextRef = useRef<AudioContext | null>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+    const [connectionId, setConnectionId] = useState('');
 
     const {webSocketMessage, sendWebSocketMessage} = useWebSocket(webSocketUrl);
 
     const startTranscript = async (params?: TranscriberStartParams) => {
         try {
+            // setWebSocketAddress(webSocketUrl);
             const connectionId = crypto.randomUUID().toString();
+            setConnectionId(connectionId);
             const audioContext = new AudioContext();
             const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
             const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
@@ -22,25 +25,35 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
             const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
             mediaStreamSource.connect(scriptProcessor);
             scriptProcessor.connect(audioContext.destination);
+            const metadata = {
+                // RequestContext fields for backend identification
+                requestContext: {
+                    connectionId: connectionId,
+                    domainName: "localhost",
+                    routeKey: "sendAudioChunk",
+                    stage: "dev",
+                },
+                token: "xxxxxx",
+                audioMetadata: {
+                    sampleRate: 8000,
+                    codec: 'pcm_s16le',
+                }
+            };
+            const metadataJson = JSON.stringify(metadata);
+            sendWebSocketMessage(metadataJson);
 
             scriptProcessor.onaudioprocess = (event: AudioProcessingEvent) => {
                 const audioData = event.inputBuffer.getChannelData(0);
-                const isSilence = detectSilence(audioData);
-                if (!isSilence) {
-                    return;
-                }
+                // const isSilence = detectSilence(audioData);
+                // if (isSilence) {
+                //     return;
+                // }
                 const audioChunk = encodePCMChunk(audioData);
                 const binaryString = convertToBase64(audioChunk);
                 const metadata = {
                     // RequestContext fields for backend identification
-                    request_context: {
-                        session_id: connectionId,
-                        route_key: "sendAudioChunk",
-                        audio_metadata: {
-                            sample_rate: 8000,
-                            codec: 'pcm_s16le',
-                        },
-                        stage: "dev",
+                    requestContext: {
+                        connectionId: connectionId
                     },
                     body: binaryString
                 };
@@ -58,16 +71,29 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
         }
     };
 
-        const convertToBase64 = (buffer: Uint8Array): string => {
-            let binaryString = "";
-            for (const byte of buffer) {
-                binaryString += String.fromCharCode(byte);
-            }
-            return btoa(binaryString);
-        };
+    const convertToBase64 = (buffer: Uint8Array): string => {
+        let binaryString = "";
+        for (const byte of buffer) {
+            binaryString += String.fromCharCode(byte);
+        }
+        return btoa(binaryString);
+    }
 
     const stopTranscript = () => {
         if (isRecording) {
+            const metadata = {
+                // RequestContext fields for backend identification
+                requestContext: {
+                    connectionId: connectionId,
+                    domainName: "localhost",
+                    routeKey: "sendAudioChunk",
+                    stage: "dev",
+                },
+                reason: "stop"
+            };
+            const metadataJson = JSON.stringify(metadata);
+            sendWebSocketMessage(metadataJson);
+
             scriptProcessorRef.current?.disconnect();
             audioContextRef.current?.close();
             mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -80,12 +106,35 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
         }
     };
 
-    const clearTranscript = () => setTranscript('');
+    const clearTranscript = () => setTranscript(null);
 
-    // Update transcript when a new message is received from the WebSocket
-    if (webSocketMessage) {
-        setTranscript((prev) => `${prev} ${webSocketMessage}`.trim());
+    const parseTranscriptResult = (json: string): TranscriptResult => {
+        const parsed = JSON.parse(json);
+        return {
+            isFinal: parsed.is_final,
+            transcript: parsed.text,
+            timedOut: parsed.timed_out,
+        };
     }
+
+    useEffect(() => {
+        if (!webSocketMessage) {
+            return;
+        }
+
+        const transcriptResult = parseTranscriptResult(webSocketMessage);
+        if (transcriptResult.isFinal){
+            setTranscript((prevState) => {
+                if (prevState) {
+                    return {
+                        isFinal: true,
+                        transcript: `${prevState.transcript} ${transcriptResult.transcript}`
+                    }
+                }
+                return transcriptResult;
+            });
+        }
+    }, [webSocketMessage]);
 
     return {
         startTranscript,
@@ -104,7 +153,7 @@ const encodePCMChunk = (input: Float32Array): Uint8Array => {
         view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
     }
     return new Uint8Array(buffer);
-};
+}
 
 const detectSilence = (chunk: Float32Array): boolean => {
     const rms = Math.sqrt(chunk.reduce((sum, sample) => sum + sample * sample, 0) / chunk.length);

@@ -20,23 +20,24 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
         transcriber,
         isSpeechRecognitionSupported,
         isMicrophoneAvailable,
-    } = useTranscriber(experimentalSettings, 'wss://your-websocket-url');
+    } = useTranscriber(experimentalSettings, 'ws://127.0.0.1:8080');
 
+    const{isRecording, transcript, clearTranscript} = transcriber;
     const {preferences} = useAppContext();
 
     // Handle recording stop and send message
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
 
-        if (!transcriber.isRecording && transcriber.transcript) {
+        if (!isRecording && transcript) {
             // Small delay to ensure we have the final transcript
             timeoutId = setTimeout(() => {
-                const finalMessage = transcriber.transcript.trim();
+                const finalMessage = transcript.transcript.trim();
                 if (finalMessage) {
                     onSendMessage(finalMessage);
                     setMessage('');
                 }
-                transcriber.clearTranscript();
+                clearTranscript();
             }, 500);
         }
 
@@ -45,7 +46,7 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
                 clearTimeout(timeoutId);
             }
         };
-    }, [transcriber.isRecording, transcriber.transcript, onSendMessage, transcriber.clearTranscript]);
+    }, [isRecording, transcript]);
 
     // Adjust textarea height dynamically
     useEffect(() => {
@@ -102,7 +103,7 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
               dark:text-white dark:placeholder-gray-400 p-3'>
             <textarea
                 ref={textareaRef}
-                value={transcriber.isRecording ? transcriber.transcript : message}
+                value={transcriber.isRecording ? (transcriber.transcript ? transcriber.transcript.transcript : '') : message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={transcriber.isRecording ? 'Listening...' : 'Type a message...'}
