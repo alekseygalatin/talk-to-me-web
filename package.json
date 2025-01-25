@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
-    "aws-amplify": "^5.3.11",
+    "aws-amplify": "^5.3.27",
     "axios": "^1.7.7",
     "buffer": "^6.0.3",
     "framer-motion": "^11.11.11",
