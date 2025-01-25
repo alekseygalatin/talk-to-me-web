@@ -74,14 +74,14 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
         }
     };
 
-    const toggleListening = () => {
+    const toggleListening = async () => {
         // Handle SpeechRecognition
         if (transcriber.isRecording) {
             transcriber.stopTranscript();
         } else {
             setMessage(""); // Clear the current message
             transcriber.clearTranscript();
-            transcriber.startTranscript({
+            await transcriber.startTranscript({
                 continuous: true,
                 language: preferences?.currentLanguageToLearn ?? "sv-se",
             });
