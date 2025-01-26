@@ -12,6 +12,7 @@ import { AppProvider } from './contexts/AppContext';
 import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { Amplify } from 'aws-amplify';
+import { Hub } from 'aws-amplify';
 
 Amplify.configure({
   Auth: {
@@ -20,6 +21,24 @@ Amplify.configure({
     userPoolWebClientId: "7o8tqlt2ucihqsbtthfopc9d4p"
   },
 })
+
+Hub.listen('auth', (data) => {
+  const { payload } = data;
+
+  switch (payload.event) {
+    case 'signedIn':
+      AuthService.refreshToken();
+      break;
+    case 'signedOut':
+      AuthService.clearToken();
+      break;
+    case 'tokenRefresh':
+      AuthService.refreshToken();
+      break;
+    default:
+      break;
+  }
+});
 
 function App() {
   return (

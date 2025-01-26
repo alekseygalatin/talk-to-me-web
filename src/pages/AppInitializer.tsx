@@ -4,16 +4,21 @@ import { getUserPreferences } from "../api/userPreferencesApi";
 import AuthService from "../core/auth/authService";
 import { useAppContext } from "../contexts/AppContext";
 import { getLanguage } from "../api/languagesApi";
+import { Auth } from "aws-amplify";
 
 const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { setPreferences, setCurrentLanguage, setIsInitialized } = useAppContext();
   const navigate = useNavigate();
+  let userId = '';
 
   useEffect(() => {
     const initializeApp = async () => {
-      
-      const userId = AuthService.getUserId();
-      if (!userId) {
+      Auth.currentAuthenticatedUser().then((user) => {
+        userId = user.getUserId();
+      });
+
+      const token = AuthService.getToken();
+      if (!token) {
         navigate("/login"); 
         return;
       }
