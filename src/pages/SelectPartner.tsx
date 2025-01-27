@@ -6,6 +6,7 @@ import {
   Briefcase,
   BookMarked, 
   TableProperties,
+  Mic,
 } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import { useAppContext } from '../contexts/AppContext';
@@ -54,6 +55,13 @@ const partners: Partner[] = [
     role: 'Vocabulary Specialist',
     description: 'Expert in vocabulary building and word usage.',
     icon: <TableProperties className="w-8 h-8 text-blue-500" />,
+  },
+  {
+    id: '6',
+    name: 'Liam',
+    role: 'Live Conversation Partner',
+    description: 'Engages in live conversations without text input.',
+    icon: <Mic className="w-8 h-8 text-blue-500" />,
   },
 ];
 
