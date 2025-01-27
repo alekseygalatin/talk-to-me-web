@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Mic, Waveform, Radio } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
 import { SettingsSidebar } from '../components/SettingsSidebar';
@@ -16,6 +16,7 @@ import {useAppContext} from "../contexts/AppContext.tsx";
 import ChatHeader from '../components/ChatHeader';
 import { fetchAudioForMessage } from '../api/audioApi';
 import { fetchHistory } from "../api/historyApi.ts"; // Import the new API function
+import { motion } from 'framer-motion';
 
 interface Message {
   id: string;
@@ -24,6 +25,8 @@ interface Message {
   timestamp: Date;
   audioUrl?: string;
 }
+
+const generateRandomHeight = () => Math.random() * (32 - 4) + 4;
 
 function Chat() {
   const { partnerId } = useParams();
@@ -190,6 +193,19 @@ function Chat() {
     }
   }, [partnerId, messages.length]);
 
+  useEffect(() => {
+    if (partnerId === "6") {
+      // Logic to start live conversation
+      startLiveConversation();
+    }
+  }, [partnerId]);
+
+  const startLiveConversation = () => {
+    // Implement the logic to start live conversation
+    console.log("Starting live conversation...");
+    // This could involve setting up a WebRTC connection or using a speech recognition API
+  };
+
   const handleSendMessage = async (text: string) => {
     if (!token) return;
 
@@ -266,17 +282,90 @@ function Chat() {
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto"
         >
-          
-          
           <div className="p-4 pt-6">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                token={token}
-                onPlayAudio={text => handlePlayAudio(text)}
-              />
-            ))}
+            {partnerId === "6" ? (
+              <div className="flex-1 flex items-center justify-center p-4">
+                <motion.div 
+                  className="relative w-full max-w-md"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-white/20">
+                    <motion.div 
+                      className="absolute -top-6 left-1/2 -translate-x-1/2"
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-2xl shadow-lg">
+                        <Radio className="w-8 h-8 text-white" />
+                      </div>
+                    </motion.div>
+
+                    <div className="mt-8 mb-6 text-center">
+                      <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                        Voice Chat Active
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mt-2">
+                        Speak naturally in your language
+                      </p>
+                    </div>
+
+                    <div className="flex justify-center items-end gap-1 h-32 mb-6 px-4">
+                      {[...Array(16)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="w-1.5 bg-gradient-to-t from-blue-500 to-blue-400 rounded-full"
+                          animate={{
+                            height: [
+                              generateRandomHeight(),
+                              generateRandomHeight(),
+                              generateRandomHeight(),
+                            ],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: i * 0.1,
+                          }}
+                          style={{
+                            opacity: i < 8 ? i / 8 : (16 - i) / 8,
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="flex justify-center gap-3">
+                      <motion.div
+                        className="w-3 h-3 rounded-full bg-blue-500"
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      />
+                      <motion.div
+                        className="w-3 h-3 rounded-full bg-blue-500"
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                      />
+                      <motion.div
+                        className="w-3 h-3 rounded-full bg-blue-500"
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  token={token}
+                  onPlayAudio={text => handlePlayAudio(text)}
+                />
+              ))
+            )}
             {isProcessing && (
               <div className='flex justify-left py-2 text-gray-600 dark:text-gray-400'>
                 <MessageSquare className="w-5 h-5 animate-bounce" />
@@ -286,19 +375,21 @@ function Chat() {
           </div>
         </div>
 
-        <div 
-          className='border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
-          style={{
-            paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
-          }}
-        >
-          <div className="px-3 sm:px-4 py-3">
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              isProcessing={isProcessing}
-            />
+        {partnerId !== "6" && (
+          <div 
+            className='border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+            style={{
+              paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
+            }}
+          >
+            <div className="px-3 sm:px-4 py-3">
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                isProcessing={isProcessing}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <SettingsSidebar
           isOpen={isSidebarOpen}
