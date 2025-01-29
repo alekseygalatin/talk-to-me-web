@@ -1,26 +1,26 @@
 import { UserPreference } from "../models/UserPreference";
 import apiClient from "./apiClient";
 
-export const createUserPreferences = async (userId: string, preferences: UserPreference) => {
+export const createUserPreferences = async (preferences: UserPreference) => {
   //console.log("api: createUserPreferences");
-  const response = await apiClient.post(`/UserPreferences/${userId}`, preferences);
+  const response = await apiClient.post(`/UserPreferences`, preferences);
   return response.data;
 };
 
-export const updateUserPreferences = async (userId: string, preferences: UserPreference) => {
+export const updateUserPreferences = async (preferences: UserPreference) => {
   //console.log("api: updateUserPreferences");
-  const response = await apiClient.put(`/UserPreferences/${userId}`, preferences);
+  const response = await apiClient.put(`/UserPreferences`, preferences);
   return response.data;
 };
 
-export const setCurrentLanguageToLearn = async (userId: string, langaugeCode: string) => {
+export const setCurrentLanguageToLearn = async (langaugeCode: string) => {
   //console.log("api: setCurrentLanguageToLearn");
-  const response = await apiClient.put(`/UserPreferences/set-current-language-to-learn/${userId}/${langaugeCode}`);
+  const response = await apiClient.put(`/UserPreferences/set-current-language-to-learn/${langaugeCode}`);
   return response.data;
 };
 
-export const getUserPreferences = async (userId: string): Promise<UserPreference> => {
+export const getUserPreferences = async (): Promise<UserPreference> => {
   //console.log("api: getUserPreferences");
-    const response = await apiClient.get(`/UserPreferences/${userId}`);
+    const response = await apiClient.get(`/UserPreferences`);
     return response.data; 
   };

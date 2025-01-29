@@ -1,8 +1,7 @@
 import { jwtDecode } from 'jwt-decode';
-import { Amplify } from "aws-amplify";
+import { Auth } from "aws-amplify";
 
 const TOKEN_KEY = "idToken";
-const EXPIRES_AT = "expiresAt";  
 
 interface TokenPayload {
   userId: string;
@@ -16,34 +15,21 @@ class AuthService {
     return localStorage.getItem(TOKEN_KEY);
   }
 
-  static refreshToken = async (): Promise<string | null> => {
+  static refreshToken(): void {
     console.log("refreshToken");
     try {
-      const session = await Amplify.Auth.fetchSession();
-      const accessToken = session.tokens?.accessToken.toString();
-
-      console.log("aud: " + session.tokens?.accessToken.payload.aud);
-      console.log("iis: " + session.tokens?.accessToken.payload.iss);
-
-      if (accessToken) {
-        this.storeToken(accessToken);
-        return accessToken;
-      }
-
-      return null;
+      Auth.currentSession().then((session => {
+        const accessToken = session.getAccessToken();
+        const token = accessToken.getJwtToken();
+        this.storeToken(token);
+      }));
     } catch (error) {
       console.error("Error refreshing token:", error);
-      return null;
     }
   };
 
   static storeToken(token: string): void {
-    const decodedToken = this.decodeToken(token);
-    if (decodedToken) {
-      const expiresAt = decodedToken.exp * 1000; // Convert to ms
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem(EXPIRES_AT, expiresAt.toString());
-    }
+    localStorage.setItem(TOKEN_KEY, token);
   }
 
   static decodeToken(token?: string): TokenPayload | null {
@@ -62,7 +48,6 @@ class AuthService {
   static clearToken(): void {
     console.log("clearToken");
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(EXPIRES_AT);
   }
 
 }

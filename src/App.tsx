@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import UserPreferences from "./pages/UserPreferences"
@@ -12,35 +12,26 @@ import { AppProvider } from './contexts/AppContext';
 import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { Amplify } from 'aws-amplify';
-import { Hub } from 'aws-amplify';
 
 Amplify.configure({
   Auth: {
     region: "eu-north-1",
     userPoolId: "us-east-1_walDCpNcK",
-    userPoolWebClientId: "7o8tqlt2ucihqsbtthfopc9d4p"
+    userPoolWebClientId: "7o8tqlt2ucihqsbtthfopc9d4p",
+    oauth: {
+      domain: "talk-to-me.auth.us-east-1.amazoncognito.com",
+      scope: ["openid email"],
+      /*redirectSignIn: "http://localhost:5173/select-partner/",
+      redirectSignOut: "http://localhost:5173/login/",*/
+      redirectSignIn: "https://dev.talknlearn.com/select-partner/",
+      redirectSignOut: "https://dev.talknlearn.com/login/",
+      responseType: "code",
+    },
   },
 })
 
-Hub.listen('auth', (data) => {
-  const { payload } = data;
-
-  switch (payload.event) {
-    case 'signedIn':
-      AuthService.refreshToken();
-      break;
-    case 'signedOut':
-      AuthService.clearToken();
-      break;
-    case 'tokenRefresh':
-      AuthService.refreshToken();
-      break;
-    default:
-      break;
-  }
-});
-
 function App() {
+
   return (
     <Router>
       <Routes>
