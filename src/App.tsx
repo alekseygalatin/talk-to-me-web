@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import UserPreferences from "./pages/UserPreferences"
@@ -12,6 +12,9 @@ import { AppProvider } from './contexts/AppContext';
 import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { Amplify } from 'aws-amplify';
+import { experimentalSettingsManager } from "./core/ExperimentalSettingsManager.ts";
+
+const experimentalSettings = experimentalSettingsManager.getSettings();
 
 Amplify.configure({
   Auth: {
@@ -21,10 +24,8 @@ Amplify.configure({
     oauth: {
       domain: "talk-to-me.auth.us-east-1.amazoncognito.com",
       scope: ["openid email"],
-      /*redirectSignIn: "http://localhost:5173/select-partner/",
-      redirectSignOut: "http://localhost:5173/login/",*/
-      redirectSignIn: "https://dev.talknlearn.com/select-partner/",
-      redirectSignOut: "https://dev.talknlearn.com/login/",
+      redirectSignIn: experimentalSettings.UseLocalBackEnd ? "http://localhost:5173/select-partner/" : "https://dev.talknlearn.com/select-partner/",
+      redirectSignOut: experimentalSettings.UseLocalBackEnd ? "http://localhost:5173/login/" : "https://dev.talknlearn.com/login/",
       responseType: "code",
     },
   },
