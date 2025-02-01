@@ -24,7 +24,7 @@ export const useSpeechRecognitionTranscriber = (): Transcriber => {
         }
     };
 
-    const stopTranscript = (): void => {
+    const stopTranscript = async (): Promise<void> => {
         SpeechRecognition.stopListening();
     };
 

@@ -4,7 +4,7 @@ import {ExperimentalSettings} from "../../models/ExperimentalSettings.ts";
 import {TranscriberContext} from "./Transcriber.ts";
 import {useSpeechRecognitionTranscriber} from "./BrowserSpeechRecognitionTranscriber.ts";
 
-export const useTranscriber = (experimentalSettings: ExperimentalSettings, webSocketUrl: string | null = null): TranscriberContext => {
+export const useTranscriber = (experimentalSettings: ExperimentalSettings): TranscriberContext => {
     // Use SpeechRecognition transcriber
     const {
         browserSupportsSpeechRecognition,
@@ -14,7 +14,7 @@ export const useTranscriber = (experimentalSettings: ExperimentalSettings, webSo
     const isSpeechRecognitionSupported = browserSupportsSpeechRecognition || experimentalSettings.UseStreamTranscription;
 
     const transcriber = experimentalSettings.UseStreamTranscription
-        ? useAudioContextTranscriber(webSocketUrl)
+        ? useAudioContextTranscriber()
         : useSpeechRecognitionTranscriber();
     return {
         transcriber,

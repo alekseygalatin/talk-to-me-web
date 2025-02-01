@@ -1,47 +1,94 @@
 import {useState, useRef, useEffect} from 'react';
 import {useWebSocket} from "../../api/WebSocketApi/WebsocketService.ts";
+import {
+    AudioMetadata, deserializeSocketResponse,
+    serializeSocketMessage,
+    SocketAuthResponse,
+    SocketConnectRequest, SocketDisconnectRequest, SocketDisconnectResponse, SocketExceptionResponse,
+    SocketRequest, SocketTranscribeRequest, SocketTranscriptResponse
+} from "../../api/WebSocketApi/WebsocketDTO.ts";
 import {Transcriber, TranscriberStartParams, TranscriptResult} from "./Transcriber.ts";
 import AuthService from "../auth/authService.ts";
+import {experimentalSettingsManager} from "../ExperimentalSettingsManager.ts";
 
-interface AuthResponse {
-    authResult: string;        // Corresponds to `auth_result` in Rust
-    authSuccessful: boolean;   // Corresponds to `auth_successful` in Rust
-}
+const experimentalSettings = experimentalSettingsManager.getSettings();
 
-export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcriber => {
+export const useAudioContextTranscriber = (): Transcriber => {
     const [transcript, setTranscript] = useState<TranscriptResult | null>(null);
     const [isRecording, setIsRecording] = useState(false);
-
     const audioContextRef = useRef<AudioContext | null>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
     const [connectionId, setConnectionId] = useState('');
+    const {webSocketMessage, sendWebSocketMessage} = useWebSocket();
+    const [authResponse, setAuthResponse] = useState<SocketAuthResponse | null>(null);
+    const authResponseRef = useRef<SocketAuthResponse | null>(null);
+    const [disconnectResponse, setDisconnectResponse] = useState<SocketDisconnectResponse | null>(null);
+    const disconnectResponseRef = useRef<SocketDisconnectResponse | null>(null);
 
-    const {webSocketMessage, sendWebSocketMessage} = useWebSocket(webSocketUrl);
-
-    const [authResponse, setAuthResponse] = useState<AuthResponse | null>(null);
-    const authResponseRef = useRef<AuthResponse | null>(null);
     useEffect(() => {
         authResponseRef.current = authResponse;
     }, [authResponse]);
+    useEffect(() => {
+        disconnectResponseRef.current = disconnectResponse;
+    }, [disconnectResponse]);
 
+    useEffect(() => {
+        const newId = crypto.randomUUID();
+        setConnectionId(newId);
+    }, []);
 
-    const waitForAuthenticationResult = (): Promise<AuthResponse> => {
-        return new Promise((resolve) => {
-            const interval = setInterval(() => {
-                if (authResponseRef.current) {
-                    clearInterval(interval);
-                    resolve(authResponseRef.current);
-                }
-            }, 50);
-        });
-    }
-    const startTranscript = async (params?: TranscriberStartParams) => {
+    useEffect(() => {
+        if (!webSocketMessage) {
+            return;
+        }
+        const deserialized = deserializeSocketResponse(webSocketMessage);
+        if (!deserialized) {
+            return;
+        }
+        if (deserialized.route === "authResponse") {
+            const authResponse = deserialized.result as SocketAuthResponse;
+            console.log("Auth result:", authResponse);
+            setAuthResponse(authResponse);
+
+            return;
+        } else if (deserialized.route === "transcript") {
+            const transcriptResult = deserialized.result as SocketTranscriptResponse;
+            if (transcriptResult.isFinal) {
+                setTranscript((prevState: TranscriptResult | null) => {
+                    if (prevState) {
+                        return {
+                            isFinal: true,
+                            transcript: `${prevState.transcript} ${transcriptResult.text}`
+                        }
+                    }
+                    return {
+                        isFinal: true,
+                        transcript: `${transcriptResult.text}`
+                    };
+                });
+            }
+        } else if (deserialized.route === "exception") {
+            const errorResult = deserialized.result as SocketExceptionResponse;
+            console.log("Error:", errorResult);
+        } else if (deserialized.route === "disconnect") {
+            setDisconnectResponse(deserialized.result as SocketDisconnectResponse);
+        }
+    }, [webSocketMessage]);
+
+    const startTranscript = async (params: TranscriberStartParams) => {
         try {
+            if (!params.language) {
+                console.error('Language is required');
+
+                return;
+            }
+
+            // we can consider this as a low quality audio. Need to think a way to improve it.
+            const sampleRate = 8000;
+
             const token = AuthService.getToken();
-            const connectionId = crypto.randomUUID().toString();
-            setConnectionId(connectionId);
-            const audioContext = new AudioContext();
+            const audioContext = new AudioContext({sampleRate: sampleRate});
             const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
             const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
 
@@ -49,16 +96,13 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
             mediaStreamSource.connect(scriptProcessor);
             scriptProcessor.connect(audioContext.destination);
 
-            const metadata = {
-                requestContext: {
-                    connectionId: connectionId,
-                    domainName: "localhost",
-                    routeKey: "sendAudioChunk",
-                    stage: "dev",
-                },
-                token: token
+            const connectMessage: SocketRequest<SocketConnectRequest> = {
+                route: "Connect",
+                request: {
+                    token: token
+                }
             };
-            const metadataJson = JSON.stringify(metadata);
+            const metadataJson = serializeMessage(connectMessage);
             sendWebSocketMessage(metadataJson);
 
             const authResponse = await waitForAuthenticationResult();
@@ -69,8 +113,6 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
 
             let firstChunk = true;
             scriptProcessor.onaudioprocess = (event: AudioProcessingEvent) => {
-
-
                 const audioData = event.inputBuffer.getChannelData(0);
                 // const isSilence = detectSilence(audioData);
                 // if (isSilence) {
@@ -78,33 +120,24 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
                 // }
                 const audioChunk = encodePCMChunk(audioData);
                 const binaryString = convertToBase64(audioChunk);
-                let metadata = {};
-                if (firstChunk) {
-                    metadata = {
-                        // RequestContext fields for backend identification
-                        requestContext: {
-                            connectionId: connectionId
-                        },
-                        body: binaryString,
-                        audioMetadata: {
-                            sampleRate: 8000,
-                            codec: 'pcm',
-                            language: params?.language || 'en-US',
-                        }
-                    };
-                    firstChunk = false;
-                } else {
-                    metadata = {
-                        // RequestContext fields for backend identification
-                        requestContext: {
-                            connectionId: connectionId
-                        },
-                        body: binaryString
-                    };
-                }
+                const audioMetadata: AudioMetadata = {
+                    sampleRate: sampleRate,
+                    codec: 'pcm',
+                    language: params.language
+                };
 
-                const metadataJson = JSON.stringify(metadata);
+                const transcriptMessage: SocketRequest<SocketTranscribeRequest> = {
+                    route: "Transcribe",
+                    request: {
+                        audioData: binaryString,
+                        audioMetadata: firstChunk ? audioMetadata : null
+                    }
+                };
+
+                const metadataJson = serializeMessage(transcriptMessage);
                 sendWebSocketMessage(metadataJson);
+
+                firstChunk = false;
             };
 
             audioContextRef.current = audioContext;
@@ -125,21 +158,8 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
         return btoa(binaryString);
     }
 
-    const stopTranscript = () => {
+    const stopTranscript = async () => {
         if (isRecording) {
-            const metadata = {
-                // RequestContext fields for backend identification
-                requestContext: {
-                    connectionId: connectionId,
-                    domainName: "localhost",
-                    routeKey: "sendAudioChunk",
-                    stage: "dev",
-                },
-                reason: "stop"
-            };
-            const metadataJson = JSON.stringify(metadata);
-            sendWebSocketMessage(metadataJson);
-
             scriptProcessorRef.current?.disconnect();
             audioContextRef.current?.close();
             mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -147,55 +167,60 @@ export const useAudioContextTranscriber = (webSocketUrl: string | null): Transcr
             audioContextRef.current = null;
             mediaStreamRef.current = null;
             scriptProcessorRef.current = null;
-
+            const disconnectRequest: SocketRequest<SocketDisconnectRequest> = {
+                route: "Disconnect",
+                request: {
+                    reason: "stop requested"
+                }
+            };
+            const disconnectMessage = serializeMessage(disconnectRequest);
+            sendWebSocketMessage(disconnectMessage);
+            await waitForDisconnectResponse();
             setIsRecording(false);
         }
     };
 
     const clearTranscript = () => setTranscript(null);
 
-    const parseTranscriptResult = (json: string): TranscriptResult => {
-        const parsed = JSON.parse(json);
-        return {
-            isFinal: parsed.is_final,
-            transcript: parsed.text,
-            timedOut: parsed.timed_out,
-        };
-    }
-    const parseAuthResponse = (json: string): AuthResponse => {
-        const parsed = JSON.parse(json);
-        return {
-            authResult: parsed.authResult,
-            authSuccessful: parsed.authSuccessful
-        };
-    }
-
-    useEffect(() => {
-        if (!webSocketMessage) {
-            return;
-        }
-        if (webSocketMessage && webSocketMessage.includes('"authResult"')) {
-            const authResponse = parseAuthResponse(webSocketMessage);
-            console.log("Auth result:", webSocketMessage);
-            setAuthResponse(authResponse);
-
-            return;
-        }
-
-
-        const transcriptResult = parseTranscriptResult(webSocketMessage);
-        if (transcriptResult.isFinal) {
-            setTranscript((prevState) => {
-                if (prevState) {
-                    return {
-                        isFinal: true,
-                        transcript: `${prevState.transcript} ${transcriptResult.transcript}`
-                    }
+    const waitForAuthenticationResult = (): Promise<SocketAuthResponse> => {
+        return new Promise((resolve) => {
+            const interval = setInterval(() => {
+                if (authResponseRef.current) {
+                    clearInterval(interval);
+                    resolve(authResponseRef.current);
                 }
-                return transcriptResult;
-            });
+            }, 50);
+        });
+    };
+
+    const waitForDisconnectResponse = (): Promise<SocketDisconnectResponse> => {
+        return new Promise((resolve) => {
+            const interval = setInterval(() => {
+                if (disconnectResponseRef.current) {
+                    clearInterval(interval);
+                    resolve(disconnectResponseRef.current);
+                }
+            }, 50);
+        });
+    };
+
+    const serializeMessage =(message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest> ): string => {
+        if(experimentalSettings.UseLocalWebSocket){
+            const serializedBodyMessage = serializeSocketMessage(message);
+            const request ={
+                requestContext: {
+                    connectionId: connectionId,
+                    domainName: "someName",
+                    stage: "localdev",
+                    routeKey: "$default"
+                },
+                body: serializedBodyMessage
+            };
+            return JSON.stringify(request);
         }
-    }, [webSocketMessage]);
+
+        return serializeSocketMessage(message);
+    }
 
     return {
         startTranscript,

@@ -8,6 +8,9 @@ export class ExperimentalSettingsManager {
         const isLocal = process.env.BACKEND_RUN_STRATEGY === 'local';
 
         this.settings = {
+            UseLocalWebSocket: false,
+            WebSocketUrl: 'wss://egy8ib44s2.execute-api.us-east-1.amazonaws.com/production',
+            // WebSocketUrl: 'ws://127.0.0.1:8080', // 'wss://egy8ib44s2.execute-api.us-east-1.amazonaws.com/production',
             UseStreamTranscription: isDevelopment,
             UseLocalBackEnd: isLocal,
         };

@@ -6,8 +6,11 @@ export interface TranscriberContext {
 
 export interface Transcriber {
     startTranscript(params?: TranscriberStartParams): Promise<void>;
-    stopTranscript(): void;
+
+    stopTranscript(): Promise<void>;
+
     clearTranscript(): void;
+
     transcript: TranscriptResult | null;
     isRecording: boolean;
 }
@@ -21,5 +24,6 @@ export interface TranscriptResult {
 export interface TranscriberStartParams {
     language: string;
     continuous?: boolean;
+
     [key: string]: any;
 }
