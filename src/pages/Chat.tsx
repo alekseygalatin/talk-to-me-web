@@ -175,7 +175,7 @@ function Chat() {
 
       setIsProcessing(true);
       try {
-        //await fetchChatHistory('wordTeacherAgent'); // Wait for this to complete
+        await fetchChatHistory('wordTeacherAgent'); // Wait for this to complete
         await fetchInitialMessageForEmma(); // Then call this
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -189,7 +189,7 @@ function Chat() {
     } else if (partnerId == "5") {
       fetchData(); // Call the new async function
     } else {
-      //fetchChatHistory('conversationAgent');
+      fetchChatHistory('conversationAgent');
     }
   }, [partnerId, messages.length]);
 
