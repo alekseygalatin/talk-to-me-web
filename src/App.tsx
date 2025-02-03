@@ -24,8 +24,8 @@ Amplify.configure({
     oauth: {
       domain: "talk-to-me.auth.us-east-1.amazoncognito.com",
       scope: ["openid email"],
-      redirectSignIn: experimentalSettings.UseLocalBackEnd ? "http://localhost:5173/select-partner/" : "https://dev.talknlearn.com/select-partner/",
-      redirectSignOut: experimentalSettings.UseLocalBackEnd ? "http://localhost:5173/login/" : "https://dev.talknlearn.com/login/",
+      redirectSignIn: `${experimentalSettings.FrontendUrl}/select-partner/`,
+      redirectSignOut: `${experimentalSettings.FrontendUrl}/login/`,
       responseType: "code",
     },
   },

@@ -1,4 +1,5 @@
 export interface ExperimentalSettings {
     UseStreamTranscription: boolean;
-    UseLocalBackEnd: boolean;
+    BackendUrl: string;
+    FrontendUrl: string;
 }

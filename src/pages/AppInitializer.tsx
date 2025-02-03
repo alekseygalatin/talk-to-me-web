@@ -5,13 +5,12 @@ import { useAppContext } from "../contexts/AppContext";
 import { getLanguage } from "../api/languagesApi";
 
 const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { setPreferences, setCurrentLanguage, isInitialized, setIsInitialized } = useAppContext();
+  const {preferences, setPreferences, currentLanguage, setCurrentLanguage, isInitialized, setIsInitialized } = useAppContext();
   const navigate = useNavigate();
 
   useEffect(() => {
-
-    const initializeApp = async () => {
-      if (isInitialized) return;
+    const fetchPreferences = async () => {
+      if (preferences) return;
 
       try {
         const fetchedPreferences = await getUserPreferences();
@@ -22,23 +21,38 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         setPreferences(fetchedPreferences);
 
-        if (fetchedPreferences.currentLanguageToLearn) {
-          const language = await getLanguage(fetchedPreferences.currentLanguageToLearn);
-          if (language) setCurrentLanguage(language);
-        } else {
-          navigate("/select-language-to-learn");
-          return;
+      } catch (error) {
+        console.error("Error during fetching preferences:", error);
+      }
+    };
+
+    fetchPreferences();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchCurrentLanguage = async () => {
+      if (!preferences || isInitialized) return;
+
+      try {
+        if (!currentLanguage) {
+          if (preferences?.currentLanguageToLearn) {
+            const language = await getLanguage(preferences.currentLanguageToLearn);
+            if (language) setCurrentLanguage(language);
+          } else {
+            navigate("/select-language-to-learn");
+            return;
+          }
         }
 
         setIsInitialized(true);
       } catch (error) {
-        console.error("Error during app initialization:", error);
+        console.error("Error during fetching current language:", error);
       }
     };
 
-    initializeApp();
-  }, [isInitialized]);
-
+    fetchCurrentLanguage();
+  }, [preferences, currentLanguage]);
 
   // Render children only after initialization
   return <>{children}</>;
