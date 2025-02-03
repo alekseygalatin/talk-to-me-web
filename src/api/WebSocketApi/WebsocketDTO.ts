@@ -74,8 +74,8 @@ export const deserializeSocketResponse = (json: string): SocketResponse<SocketAu
 }
 
 // Deserializer function
-export const serializeSocketMessage = (message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest> ): string => {
-    const flattenedMetadata = { route: message.route, ...message.request };
+export const serializeSocketMessage = (message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest>): string => {
+    const flattenedMetadata = {route: message.route, ...message.request};
 
     return JSON.stringify(flattenedMetadata);
 }

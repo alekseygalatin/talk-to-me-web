@@ -1,21 +1,22 @@
-import {useAudioContextTranscriber} from "./AudioContextTranscriber.ts";
+import {useRemoteSpeechRecognitionTranscriber} from "./RemoteSpeechRecognitionTranscriber.ts";
 import {useSpeechRecognition} from 'react-speech-recognition';
 import {ExperimentalSettings} from "../../models/ExperimentalSettings.ts";
-import {TranscriberContext} from "./Transcriber.ts";
-import {useSpeechRecognitionTranscriber} from "./BrowserSpeechRecognitionTranscriber.ts";
+import {Transcriber, TranscriberContext} from "./Transcriber.ts";
+import {useBrowserBasedSpeechRecognitionTranscriber} from "./BrowserBasedSpeechRecognitionTranscriber.ts";
 
 export const useTranscriber = (experimentalSettings: ExperimentalSettings): TranscriberContext => {
-    // Use SpeechRecognition transcriber
     const {
         browserSupportsSpeechRecognition,
         isMicrophoneAvailable,
     } = useSpeechRecognition();
 
-    const isSpeechRecognitionSupported = browserSupportsSpeechRecognition || experimentalSettings.UseStreamTranscription;
+    // use browser based recognition if available, otherwise use audio context
+    let transcriber: Transcriber = useBrowserBasedSpeechRecognitionTranscriber();
+    if (!browserSupportsSpeechRecognition && experimentalSettings.StreamTranscriptionSupported) {
+        transcriber = useRemoteSpeechRecognitionTranscriber();
+    }
+    const isSpeechRecognitionSupported = browserSupportsSpeechRecognition || experimentalSettings.StreamTranscriptionSupported;
 
-    const transcriber = experimentalSettings.UseStreamTranscription
-        ? useAudioContextTranscriber()
-        : useSpeechRecognitionTranscriber();
     return {
         transcriber,
         isMicrophoneAvailable,

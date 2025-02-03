@@ -2,7 +2,7 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import {Transcriber, TranscriberStartParams, TranscriptResult} from './Transcriber';
 import {useEffect, useState} from "react";
 
-export const useSpeechRecognitionTranscriber = (): Transcriber => {
+export const useBrowserBasedSpeechRecognitionTranscriber = (): Transcriber => {
     const [transcriptResult, setTranscript] = useState<TranscriptResult | null>(null);
 
     const {
@@ -15,7 +15,7 @@ export const useSpeechRecognitionTranscriber = (): Transcriber => {
         const { language = 'en-US', continuous = true } = params || {};
 
         try {
-            SpeechRecognition.startListening({
+            await SpeechRecognition.startListening({
                 continuous,
                 language
             });
@@ -25,7 +25,7 @@ export const useSpeechRecognitionTranscriber = (): Transcriber => {
     };
 
     const stopTranscript = async (): Promise<void> => {
-        SpeechRecognition.stopListening();
+        await SpeechRecognition.stopListening();
     };
 
     const clearTranscript = (): void => {

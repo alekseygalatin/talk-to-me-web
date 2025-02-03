@@ -1,6 +1,10 @@
 export interface ExperimentalSettings {
-    UseLocalWebSocket: boolean;
-    WebSocketUrl: string;
-    UseStreamTranscription: boolean;
-    UseLocalBackEnd: boolean;
+    Api: ApiSettings
+    WebSocket: ApiSettings
+    StreamTranscriptionSupported: boolean;
+}
+
+export interface ApiSettings{
+    isDevelopment: boolean;
+    Url: string;
 }

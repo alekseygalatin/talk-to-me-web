@@ -9,8 +9,7 @@ export const useWebSocket = () => {
     const [isWebSocketConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        // Initialize WebSocket connection
-        const socket = new WebSocket(experimentalSettings.WebSocketUrl);
+        const socket = new WebSocket(experimentalSettings.WebSocket.Url);
         socketRef.current = socket;
 
         // Connection opened
@@ -21,9 +20,6 @@ export const useWebSocket = () => {
 
         // Handle incoming messages
         socket.onmessage = (event) => {
-            if(event.data.includes("error")){
-                return;
-            }
             setMessages(() => event.data); // Append message to state
         };
 

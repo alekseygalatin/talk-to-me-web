@@ -13,7 +13,7 @@ import {experimentalSettingsManager} from "../ExperimentalSettingsManager.ts";
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 
-export const useAudioContextTranscriber = (): Transcriber => {
+export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
     const [transcript, setTranscript] = useState<TranscriptResult | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -29,6 +29,7 @@ export const useAudioContextTranscriber = (): Transcriber => {
     useEffect(() => {
         authResponseRef.current = authResponse;
     }, [authResponse]);
+
     useEffect(() => {
         disconnectResponseRef.current = disconnectResponse;
     }, [disconnectResponse]);
@@ -46,13 +47,15 @@ export const useAudioContextTranscriber = (): Transcriber => {
         if (!deserialized) {
             return;
         }
+
         if (deserialized.route === "authResponse") {
             const authResponse = deserialized.result as SocketAuthResponse;
-            console.log("Auth result:", authResponse);
             setAuthResponse(authResponse);
 
             return;
-        } else if (deserialized.route === "transcript") {
+        }
+
+        if (deserialized.route === "transcript") {
             const transcriptResult = deserialized.result as SocketTranscriptResponse;
             if (transcriptResult.isFinal) {
                 setTranscript((prevState: TranscriptResult | null) => {
@@ -69,12 +72,21 @@ export const useAudioContextTranscriber = (): Transcriber => {
                 });
             }
 
-        } else if (deserialized.route === "exception") {
+            return;
+        }
+
+        if (deserialized.route === "exception") {
             const errorResult = deserialized.result as SocketExceptionResponse;
             console.log("Error:", errorResult);
             stopTranscriptInternal(true);
-        } else if (deserialized.route === "disconnect") {
+
+            return;
+        }
+
+        if (deserialized.route === "disconnect") {
             setDisconnectResponse(deserialized.result as SocketDisconnectResponse);
+
+            return;
         }
     }, [webSocketMessage]);
 
@@ -86,11 +98,8 @@ export const useAudioContextTranscriber = (): Transcriber => {
                 return;
             }
 
-            // we can consider this as a low quality audio. Need to think a way to improve it.
-            const sampleRate = 8000;
-
             const token = AuthService.getToken();
-            const audioContext = new AudioContext({sampleRate: sampleRate});
+            const audioContext = new AudioContext();
             const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
             const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
 
@@ -104,7 +113,7 @@ export const useAudioContextTranscriber = (): Transcriber => {
                     token: token
                 }
             };
-            const metadataJson = serializeMessage(connectMessage);
+            const metadataJson = serializeMessage(connectMessage, connectionId);
             sendWebSocketMessage(metadataJson);
 
             const authResponse = await waitForAuthenticationResult();
@@ -113,7 +122,7 @@ export const useAudioContextTranscriber = (): Transcriber => {
                 return;
             }
 
-            let firstChunk = true;
+            let sendMetadata = true;
             scriptProcessor.onaudioprocess = (event: AudioProcessingEvent) => {
                 const audioData = event.inputBuffer.getChannelData(0);
                 // const isSilence = detectSilence(audioData);
@@ -123,7 +132,7 @@ export const useAudioContextTranscriber = (): Transcriber => {
                 const audioChunk = encodePCMChunk(audioData);
                 const binaryString = convertToBase64(audioChunk);
                 const audioMetadata: AudioMetadata = {
-                    sampleRate: sampleRate,
+                    sampleRate: event.inputBuffer.sampleRate,
                     codec: 'pcm',
                     language: params.language
                 };
@@ -132,14 +141,14 @@ export const useAudioContextTranscriber = (): Transcriber => {
                     route: "Transcribe",
                     request: {
                         audioData: binaryString,
-                        audioMetadata: firstChunk ? audioMetadata : null
+                        audioMetadata: sendMetadata ? audioMetadata : null
                     }
                 };
 
-                const metadataJson = serializeMessage(transcriptMessage);
+                const metadataJson = serializeMessage(transcriptMessage, connectionId);
                 sendWebSocketMessage(metadataJson);
 
-                firstChunk = false;
+                sendMetadata = false;
             };
 
             audioContextRef.current = audioContext;
@@ -152,18 +161,10 @@ export const useAudioContextTranscriber = (): Transcriber => {
         }
     };
 
-    const convertToBase64 = (buffer: Uint8Array): string => {
-        let binaryString = "";
-        for (const byte of buffer) {
-            binaryString += String.fromCharCode(byte);
-        }
-        return btoa(binaryString);
-    }
-
     const stopTranscript = () => stopTranscriptInternal(false);
 
-    const stopTranscriptInternal = async (unexpected: boolean) => {
-        if (isRecording) {
+    const stopTranscriptInternal = async (stopByException: boolean) => {
+
             scriptProcessorRef.current?.disconnect();
             audioContextRef.current?.close();
             mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -171,62 +172,36 @@ export const useAudioContextTranscriber = (): Transcriber => {
             audioContextRef.current = null;
             mediaStreamRef.current = null;
             scriptProcessorRef.current = null;
-            if(!unexpected){
+
+            if (!stopByException) {
                 const disconnectRequest: SocketRequest<SocketDisconnectRequest> = {
                     route: "Disconnect",
                     request: {
-                        reason: "stop requested"
+                        reason: "stop transcription"
                     }
                 };
-                const disconnectMessage = serializeMessage(disconnectRequest);
+                const disconnectMessage = serializeMessage(disconnectRequest, connectionId);
                 sendWebSocketMessage(disconnectMessage);
                 await waitForDisconnectResponse();
             }
             setIsRecording(false);
-        }
     };
 
     const clearTranscript = () => setTranscript(null);
 
-    const waitForAuthenticationResult = (): Promise<SocketAuthResponse> => {
-        return new Promise((resolve) => {
-            const interval = setInterval(() => {
-                if (authResponseRef.current) {
-                    clearInterval(interval);
-                    resolve(authResponseRef.current);
-                }
-            }, 50);
-        });
-    };
-
-    const waitForDisconnectResponse = (): Promise<SocketDisconnectResponse> => {
-        return new Promise((resolve) => {
-            const interval = setInterval(() => {
-                if (disconnectResponseRef.current) {
-                    clearInterval(interval);
-                    resolve(disconnectResponseRef.current);
-                }
-            }, 50);
-        });
-    };
-
-    const serializeMessage =(message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest> ): string => {
-        if(experimentalSettings.UseLocalWebSocket){
-            const serializedBodyMessage = serializeSocketMessage(message);
-            const request ={
-                requestContext: {
-                    connectionId: connectionId,
-                    domainName: "someName",
-                    stage: "localdev",
-                    routeKey: "$default"
-                },
-                body: serializedBodyMessage
-            };
-            return JSON.stringify(request);
+    const waitForAuthenticationResult = async (): Promise<SocketAuthResponse> => {
+        while (!authResponseRef.current) {
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
+        return authResponseRef.current;
+    };
 
-        return serializeSocketMessage(message);
-    }
+    const waitForDisconnectResponse = async (): Promise<SocketDisconnectResponse> => {
+        while (!disconnectResponseRef.current) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        return disconnectResponseRef.current;
+    };
 
     return {
         startTranscript,
@@ -247,7 +222,35 @@ const encodePCMChunk = (input: Float32Array): Uint8Array => {
     return new Uint8Array(buffer);
 }
 
+const serializeMessage = (
+    message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest>,
+    connectionId: string): string => {
+    if (experimentalSettings.WebSocket.isDevelopment) {
+        const serializedBodyMessage = serializeSocketMessage(message);
+        const request = {
+            requestContext: {
+                connectionId: connectionId,
+                domainName: "someName",
+                stage: "localdev",
+                routeKey: "$default"
+            },
+            body: serializedBodyMessage
+        };
+        return JSON.stringify(request);
+    }
+
+    return serializeSocketMessage(message);
+}
+
 const detectSilence = (chunk: Float32Array): boolean => {
     const rms = Math.sqrt(chunk.reduce((sum, sample) => sum + sample * sample, 0) / chunk.length);
     return rms < 0.01; // Silence threshold
-};
+}
+
+const convertToBase64 = (buffer: Uint8Array): string => {
+    let binaryString = "";
+    for (const byte of buffer) {
+        binaryString += String.fromCharCode(byte);
+    }
+    return btoa(binaryString);
+}
