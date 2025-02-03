@@ -68,9 +68,11 @@ export const useAudioContextTranscriber = (): Transcriber => {
                     };
                 });
             }
+
         } else if (deserialized.route === "exception") {
             const errorResult = deserialized.result as SocketExceptionResponse;
             console.log("Error:", errorResult);
+            stopTranscriptInternal(true);
         } else if (deserialized.route === "disconnect") {
             setDisconnectResponse(deserialized.result as SocketDisconnectResponse);
         }
@@ -158,7 +160,9 @@ export const useAudioContextTranscriber = (): Transcriber => {
         return btoa(binaryString);
     }
 
-    const stopTranscript = async () => {
+    const stopTranscript = () => stopTranscriptInternal(false);
+
+    const stopTranscriptInternal = async (unexpected: boolean) => {
         if (isRecording) {
             scriptProcessorRef.current?.disconnect();
             audioContextRef.current?.close();
@@ -167,15 +171,17 @@ export const useAudioContextTranscriber = (): Transcriber => {
             audioContextRef.current = null;
             mediaStreamRef.current = null;
             scriptProcessorRef.current = null;
-            const disconnectRequest: SocketRequest<SocketDisconnectRequest> = {
-                route: "Disconnect",
-                request: {
-                    reason: "stop requested"
-                }
-            };
-            const disconnectMessage = serializeMessage(disconnectRequest);
-            sendWebSocketMessage(disconnectMessage);
-            await waitForDisconnectResponse();
+            if(!unexpected){
+                const disconnectRequest: SocketRequest<SocketDisconnectRequest> = {
+                    route: "Disconnect",
+                    request: {
+                        reason: "stop requested"
+                    }
+                };
+                const disconnectMessage = serializeMessage(disconnectRequest);
+                sendWebSocketMessage(disconnectMessage);
+                await waitForDisconnectResponse();
+            }
             setIsRecording(false);
         }
     };
