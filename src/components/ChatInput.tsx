@@ -19,8 +19,8 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
     const {
         transcriber,
         isSpeechRecognitionSupported,
-        isMicrophoneAvailable,
-    } = useTranscriber(experimentalSettings, 'ws://127.0.0.1:8080');
+        isMicrophoneAvailable
+    } = useTranscriber(experimentalSettings);
 
     const{isRecording, transcript, clearTranscript} = transcriber;
     const {preferences} = useAppContext();
@@ -77,13 +77,13 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
     const toggleListening = async () => {
         // Handle SpeechRecognition
         if (transcriber.isRecording) {
-            transcriber.stopTranscript();
+            await transcriber.stopTranscript();
         } else {
             setMessage(""); // Clear the current message
             transcriber.clearTranscript();
             await transcriber.startTranscript({
                 continuous: true,
-                language: preferences?.currentLanguageToLearn ?? "sv-se",
+                language: preferences?.currentLanguageToLearn ?? "sv-SE",
             });
         }
     };
