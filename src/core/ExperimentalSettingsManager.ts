@@ -5,14 +5,31 @@ export class ExperimentalSettingsManager {
 
     constructor() {
         /*const isDevelopment = true;
-        const isLocal = true;*/
-        const isDevelopment = process.env.NODE_ENV === 'DEV' || process.env.NODE_ENV === 'local';
-        const isLocal = process.env.BACKEND_RUN_STRATEGY === 'local';
+        const useLocalBackend = true;*/
 
+        const useLocalBackend = process.env.BACKEND_RUN_STRATEGY === 'local';
+        const isDevelopment = process.env.NODE_ENV === 'DEV' || process.env.NODE_ENV === 'local';
+
+        const useLocalWebSocket = false;
+        const streamSupported = true
         this.settings = {
-            UseStreamTranscription: isDevelopment,
-            BackendUrl: isLocal ? "https://localhost:7099/api" : "https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api",
-            FrontendUrl: isLocal ? "http://localhost:5173" : isDevelopment ? "https://dev.talknlearn.com" : "https://talknlearn.com",
+            WebSocket: {
+                isDevelopment: useLocalWebSocket,
+                Url: useLocalWebSocket
+                    ? 'ws://127.0.0.1:8080'
+                    : 'wss://egy8ib44s2.execute-api.us-east-1.amazonaws.com/production'
+            },
+            Api: {
+                isDevelopment: isDevelopment,
+                Url: useLocalBackend
+                    ? 'https://localhost:7099/api'
+                    : "https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api"
+            },
+            Frontend: {
+                isDevelopment: isDevelopment,
+                Url: useLocalBackend ? "http://localhost:5173" : isDevelopment ? "https://dev.talknlearn.com" : "https://talknlearn.com",
+            },
+            StreamTranscriptionSupported: streamSupported
         };
     }
 

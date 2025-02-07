@@ -24,8 +24,8 @@ Amplify.configure({
     oauth: {
       domain: "talk-to-me.auth.us-east-1.amazoncognito.com",
       scope: ["openid email"],
-      redirectSignIn: `${experimentalSettings.FrontendUrl}/select-partner/`,
-      redirectSignOut: `${experimentalSettings.FrontendUrl}/login/`,
+      redirectSignIn: `${experimentalSettings.Frontend.Url}/select-partner/`,
+      redirectSignOut: `${experimentalSettings.Frontend.Url}/login/`,
       responseType: "code",
     },
   },

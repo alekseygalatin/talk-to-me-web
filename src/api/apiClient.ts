@@ -4,7 +4,7 @@ import { experimentalSettingsManager } from "../core/ExperimentalSettingsManager
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 const apiClient = axios.create({
-    baseURL: experimentalSettings.BackendUrl,
+    baseURL: experimentalSettings.Api.Url,
     headers: {
         "Content-Type": "application/json",
     },
