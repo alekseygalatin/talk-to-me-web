@@ -8,6 +8,7 @@ import Spinner from '../components/Spinner';
 import React, { useState } from "react";
 import { useAppContext } from '../contexts/AppContext';
 import { getLanguage } from '../api/languagesApi';
+import { LanguageInfo } from '../models/LanguageInfo';
 
 const SelectLanguageToLearn: React.FC = () => {
     const { languages, isLoading } = useLanguages();
@@ -19,7 +20,8 @@ const SelectLanguageToLearn: React.FC = () => {
     const handleSelectLanguage = async (languageCode: string) => {
       setIsSaving(true);
       try {
-        await setCurrentLanguageToLearn(languageCode);
+        const languageInfo: LanguageInfo = { languageCode: languageCode };
+        await setCurrentLanguageToLearn(languageInfo);
         preferences!.currentLanguageToLearn = languageCode;
         const language = await getLanguage(languageCode);
         setCurrentLanguage(language);
