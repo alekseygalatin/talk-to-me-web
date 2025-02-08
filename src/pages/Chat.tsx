@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
-import { MessageSquare, Mic, Waveform, Radio } from 'lucide-react';
+import { MessageSquare, Radio } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import '../chat.css';
 import { SettingsSidebar } from '../components/SettingsSidebar';
@@ -33,7 +33,6 @@ function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const token = localStorage.getItem('idToken'); // Assume token is already stored
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const { preferences } = useAppContext();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -51,13 +50,6 @@ function Chat() {
 
   useEffect(() => {
     const fetchStory = async () => {
-      // Check for token first
-      const token = localStorage.getItem('idToken');
-      if (!token) {
-        console.error('No authentication token found');
-        return;
-      }
-
       // Prevent duplicate calls
       if (messages.length > 0) return;
       
@@ -89,13 +81,6 @@ function Chat() {
     };
 
     const fetchInitialMessageForEmma = async () => {
-      // Check for token first
-      const token = localStorage.getItem('idToken');
-      if (!token) {
-        console.error('No authentication token found');
-        return;
-      }
-
       // Prevent duplicate calls
       if (messages.length > 0) return;
 
@@ -123,13 +108,6 @@ function Chat() {
     };
 
     const fetchChatHistory = async (agent) => {
-      // Check for token first
-      const token = localStorage.getItem('idToken');
-      if (!token) {
-        console.error('No authentication token found');
-        return;
-      }
-
       // Prevent duplicate calls
       if (messages.length > 0) return;
 
@@ -163,13 +141,6 @@ function Chat() {
     };
     
     const fetchData = async () => {
-      // Check for token first
-      const token = localStorage.getItem('idToken');
-      if (!token) {
-        console.error('No authentication token found');
-        return;
-      }
-
       // Prevent duplicate calls
       if (messages.length > 0) return;
 
@@ -207,8 +178,6 @@ function Chat() {
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!token) return;
-
     const newMessage: Message = {
       id: Date.now().toString(),
       text,
@@ -361,7 +330,6 @@ function Chat() {
                 <MessageBubble
                   key={message.id}
                   message={message}
-                  token={token}
                   onPlayAudio={text => handlePlayAudio(text)}
                 />
               ))
