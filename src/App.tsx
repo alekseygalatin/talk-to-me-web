@@ -12,16 +12,27 @@ import { AppProvider } from './contexts/AppContext';
 import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { Amplify } from 'aws-amplify';
+import { experimentalSettingsManager } from "./core/ExperimentalSettingsManager.ts";
+
+const experimentalSettings = experimentalSettingsManager.getSettings();
 
 Amplify.configure({
   Auth: {
     region: "eu-north-1",
     userPoolId: "us-east-1_walDCpNcK",
-    userPoolWebClientId: "7o8tqlt2ucihqsbtthfopc9d4p"
+    userPoolWebClientId: "7o8tqlt2ucihqsbtthfopc9d4p",
+    oauth: {
+      domain: "talk-to-me.auth.us-east-1.amazoncognito.com",
+      scope: ["openid email"],
+      redirectSignIn: `${experimentalSettings.Frontend.Url}/select-partner/`,
+      redirectSignOut: `${experimentalSettings.Frontend.Url}/login/`,
+      responseType: "code",
+    },
   },
 })
 
 function App() {
+
   return (
     <Router>
       <Routes>

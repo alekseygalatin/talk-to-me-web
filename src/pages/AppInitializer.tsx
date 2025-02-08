@@ -1,51 +1,60 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserPreferences } from "../api/userPreferencesApi";
-import AuthService from "../core/auth/authService";
 import { useAppContext } from "../contexts/AppContext";
 import { getLanguage } from "../api/languagesApi";
 
 const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { setPreferences, setCurrentLanguage, setIsInitialized } = useAppContext();
+  const {preferences, setPreferences, currentLanguage, setCurrentLanguage, isInitialized, setIsInitialized } = useAppContext();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const initializeApp = async () => {
-      
-      const userId = AuthService.getUserId();
-      if (!userId) {
-        navigate("/login"); 
-        return;
-      }
+    const fetchPreferences = async () => {
+      if (preferences) return;
 
       try {
-        const fetchedPreferences = await getUserPreferences(userId);
+        const fetchedPreferences = await getUserPreferences();
         if (!fetchedPreferences) {
-          navigate("/user-preferences"); 
+          navigate("/user-preferences");
           return;
         }
 
         setPreferences(fetchedPreferences);
 
-        if (fetchedPreferences.currentLanguageToLearn) {
-           const language = await getLanguage(fetchedPreferences.currentLanguageToLearn);
-           if (language) 
-            setCurrentLanguage(language);
-        } else {
-          navigate("/select-language-to-learn");
+      } catch (error) {
+        console.error("Error during fetching preferences:", error);
+      }
+    };
+
+    fetchPreferences();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchCurrentLanguage = async () => {
+      if (!preferences || isInitialized) return;
+
+      try {
+        if (!currentLanguage) {
+          if (preferences?.currentLanguageToLearn) {
+            const language = await getLanguage(preferences.currentLanguageToLearn);
+            if (language) setCurrentLanguage(language);
+          } else {
+            navigate("/select-language-to-learn");
+            return;
+          }
         }
 
         setIsInitialized(true);
       } catch (error) {
-        console.error("Error during app initialization:", error);
+        console.error("Error during fetching current language:", error);
       }
     };
 
-    initializeApp();
-  }, [navigate, setPreferences, setCurrentLanguage, setIsInitialized]);
+    fetchCurrentLanguage();
+  }, [preferences, currentLanguage]);
 
-
-  // Render children after initialization logic
+  // Render children only after initialization
   return <>{children}</>;
 };
 

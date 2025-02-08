@@ -4,23 +4,27 @@ import { Globe } from 'lucide-react';
 import { withAuth } from '../components/withAuth';
 import { useLanguages } from "../hooks/useLanguages";
 import { setCurrentLanguageToLearn } from '../api/userPreferencesApi';
-import AuthService from '../core/auth/authService';
 import Spinner from '../components/Spinner';
 import React, { useState } from "react";
 import { useAppContext } from '../contexts/AppContext';
+import { getLanguage } from '../api/languagesApi';
+import { LanguageInfo } from '../models/LanguageInfo';
 
 const SelectLanguageToLearn: React.FC = () => {
-    const userId = AuthService.getUserId();
     const { languages, isLoading } = useLanguages();
     const navigate = useNavigate();
     const location = useLocation();
     const [isSaving, setIsSaving ] = useState(false);
-    const { preferences } = useAppContext();
+    const { preferences, setCurrentLanguage } = useAppContext();
 
     const handleSelectLanguage = async (languageCode: string) => {
       setIsSaving(true);
       try {
-        await setCurrentLanguageToLearn(userId!, languageCode);
+        const languageInfo: LanguageInfo = { languageCode: languageCode };
+        await setCurrentLanguageToLearn(languageInfo);
+        preferences!.currentLanguageToLearn = languageCode;
+        const language = await getLanguage(languageCode);
+        setCurrentLanguage(language);
         const returnTo = location.state?.returnTo || "/select-partner";
         navigate(returnTo); 
       }

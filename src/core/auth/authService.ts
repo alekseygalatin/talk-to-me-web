@@ -1,6 +1,7 @@
 import { jwtDecode } from 'jwt-decode';
+import { Auth } from "aws-amplify";
 
-const TOKEN_KEY = "idToken"; 
+const TOKEN_KEY = "idToken";
 
 interface TokenPayload {
   userId: string;
@@ -10,16 +11,30 @@ interface TokenPayload {
 
 class AuthService {
 
-  static storeToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
-  }
-
   static getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }
 
-  static decodeToken(): TokenPayload | null {
-    const token = this.getToken();
+  static refreshToken(): void {
+    console.log("refreshToken");
+    try {
+      Auth.currentSession().then((session => {
+        const accessToken = session.getAccessToken();
+        const token = accessToken.getJwtToken();
+        this.storeToken(token);
+      }));
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+    }
+  };
+
+  static storeToken(token: string): void {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+
+  static decodeToken(token?: string): TokenPayload | null {
+    if (!token)
+      token = this.getToken()!;
     if (!token) return null;
 
     try {
@@ -30,22 +45,11 @@ class AuthService {
     }
   }
 
-  static isAuthenticated(): boolean {
-    const decodedToken = this.decodeToken();
-    if (!decodedToken) return false;
-
-    const currentTime = Math.floor(Date.now() / 1000);
-    return decodedToken.exp > currentTime;
-  }
-
-  static getUserId(): string | null {
-    const decodedToken = this.decodeToken();
-    return decodedToken?.sub || null;
-  }
-
   static clearToken(): void {
+    console.log("clearToken");
     localStorage.removeItem(TOKEN_KEY);
   }
+
 }
 
 export default AuthService;
