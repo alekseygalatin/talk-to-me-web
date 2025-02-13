@@ -36,6 +36,7 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
   };
 
   const handleRegister = async (event: React.FormEvent) => {
+    return;
     event.preventDefault();
     setIsRequesting(true);
     setError("");
