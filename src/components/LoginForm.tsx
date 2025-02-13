@@ -62,6 +62,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const handleGoogleSignIn = async () => {
     try {
+      return;
       await Auth.federatedSignIn({
         provider: CognitoHostedUIIdentityProvider.Google,
       });
