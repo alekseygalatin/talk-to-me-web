@@ -16,7 +16,7 @@ const Header: React.FC = () => {
 
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { preferences, currentLanguage, isInitialized } = useAppContext();
+  const { preferences, currentLanguage, isInitialized, clearData } = useAppContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
@@ -111,6 +111,7 @@ const Header: React.FC = () => {
                         <button
                           onClick={() => {
                             Auth.signOut();
+                            clearData();
                             navigate("/login");
                           }}
                           className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"

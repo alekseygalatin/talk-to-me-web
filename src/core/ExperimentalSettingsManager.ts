@@ -27,7 +27,7 @@ export class ExperimentalSettingsManager {
             },
             Frontend: {
                 isDevelopment: isDevelopment,
-                Url: useLocalBackend ? "http://localhost:5173" : isDevelopment ? "https://dev.talknlearn.com" : "https://talknlearn.com",
+                Url: useLocalBackend ? "http://localhost:5173" : /*isDevelopment ?*/ "https://dev.talknlearn.com" /*: "https://talknlearn.com"*/,
             },
             StreamTranscriptionSupported: streamSupported
         };
