@@ -19,7 +19,7 @@ import { NavLink } from "react-router-dom";
 const Header: React.FC = () => {
 
   const navigate = useNavigate();
-  const { preferences, currentLanguage, isInitialized } = useAppContext();
+  const { preferences, currentLanguage, isInitialized, clearData } = useAppContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {theme, toggleTheme} = useAppContext();
 
@@ -103,6 +103,7 @@ const Header: React.FC = () => {
                         <button
                           onClick={() => {
                             Auth.signOut();
+                            clearData();
                             navigate("/login");
                           }}
                           className="flex items-center gap-2 w-full px-6 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"

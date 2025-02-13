@@ -11,6 +11,7 @@ interface AppContextType {
   setIsInitialized: React.Dispatch<React.SetStateAction<boolean>>;
   theme: string;
   toggleTheme: () => void;
+  clearData: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,10 +42,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentLanguage, setCurrentLanguage] = useState<Language | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
+  const clearData = () => {
+    setPreferences(null);
+    setCurrentLanguage(null);
+    setIsInitialized(false);
+  }
 
   return (
     <AppContext.Provider
-      value={{ preferences, setPreferences, currentLanguage, setCurrentLanguage, isInitialized, setIsInitialized, theme, toggleTheme }}
+      value={{ preferences, setPreferences, currentLanguage, setCurrentLanguage, isInitialized, setIsInitialized, theme, toggleTheme, clearData}}
     >
       {children}
     </AppContext.Provider>

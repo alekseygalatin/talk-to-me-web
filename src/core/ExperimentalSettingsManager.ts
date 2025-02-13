@@ -8,7 +8,7 @@ export class ExperimentalSettingsManager {
         const useLocalBackend = true;*/
 
         const useLocalBackend = process.env.BACKEND_RUN_STRATEGY === 'local';
-        const isDevelopment = process.env.NODE_ENV === 'DEV' || process.env.NODE_ENV === 'local';
+        const isDevelopment = process.env.ENV === 'DEV' || process.env.ENV === 'local';
 
         const useLocalWebSocket = false;
         const streamSupported = true
