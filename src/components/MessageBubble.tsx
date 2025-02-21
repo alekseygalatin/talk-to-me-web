@@ -109,7 +109,7 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
 
   const handleWordClick = (word: string, event: React.MouseEvent) => {
       event.stopPropagation();
-      const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, '');
+      const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, '').toLowerCase();
       
       if (selectedWord !== cleanWord) {
           setSelectedWord(cleanWord);

@@ -8,6 +8,7 @@ import { useAppContext } from '../contexts/AppContext.tsx';
 import WordPopup from '../components/WordPopup.tsx';
 import Spinner from '../components/Spinner.tsx';
 import { useNavigate } from 'react-router-dom';
+import { IncludeIntoChat } from '../models/IncludeIntoChat.ts';
 
 
 const WordsPage: React.FC = () => {
@@ -42,11 +43,13 @@ const WordsPage: React.FC = () => {
   );
 
   const handleTranslateClick = () => {
-    if (wordForTranslation.trim() === '') {
+    
+    const cleanWord: string = wordForTranslation.trim().replace(/[^\p{L}\p{N}\s\-]/gu, '').toLowerCase();
+    if (!cleanWord) {
       return;
     }
-    const cleanWord = wordForTranslation.replace(/[^\p{L}\p{N}\s\-]/gu, '').toLowerCase();
-    setSelectedWord(cleanWord);
+    console.log(cleanWord);
+    setSelectedWord(cleanWord.toString());
   };
 
   const handleWordAdded = async () => {
@@ -76,7 +79,8 @@ const WordsPage: React.FC = () => {
   const handleIncludeIntoChat= async (index: number, word: Word) => {
     setIsIncluding(true);
     try {
-      await setIncludeIntoChat(word.language, word.word, !word.includeIntoChat);
+      const includeIntoChat: IncludeIntoChat = { languageCode: word.language, word: word.word, includeIntoChat: !word.includeIntoChat };
+      await setIncludeIntoChat(includeIntoChat);
       const updatedWords = [...words];
       updatedWords[index].includeIntoChat = !updatedWords[index].includeIntoChat;
       setWords(updatedWords);
