@@ -15,6 +15,7 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
     const [isTipsOpen, setIsTipsOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const experimentalSettings = experimentalSettingsManager.getSettings();
+    const [activeButton, setActiveButton] = useState('chat'); // Default to 'chat'
 
     const {
         transcriber,
@@ -24,6 +25,13 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
 
     const{isRecording, transcript, clearTranscript} = transcriber;
     const {preferences} = useAppContext();
+
+    const buttonOptions = [
+        { id: 'chat', icon: '💬' },
+        { id: 'translate', icon: '🌐' },
+        { id: 'practice', icon: '🎯' },
+        { id: 'words', icon: '📚' },
+    ];
 
     // Handle recording stop and send message
     useEffect(() => {
@@ -98,20 +106,41 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
 
     return (
         <>
+            <div className="mb-1">
+                <div className="flex justify-end gap-0.5 px-1">
+                    {buttonOptions.map((button) => (
+                        <button
+                            key={button.id}
+                            onClick={() => setActiveButton(button.id)}
+                            className={`
+                                p-1 rounded transition-all duration-200 
+                                backdrop-blur-sm
+                                ${activeButton === button.id 
+                                    ? 'bg-blue-500/70 text-white shadow-sm scale-110' 
+                                    : 'bg-white/30 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 hover:bg-white/40 dark:hover:bg-gray-700/40 hover:scale-105'
+                                }
+                            `}
+                            title={button.id.charAt(0).toUpperCase() + button.id.slice(1)}
+                        >
+                            <span className="text-sm">{button.icon}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <form onSubmit={handleSubmit}>
-                <div className='flex w-full rounded-2xl border border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800
-              dark:text-white dark:placeholder-gray-400 p-3'>
-            <textarea
-                ref={textareaRef}
-                value={transcriber.isRecording ? (transcriber.transcript ? transcriber.transcript.transcript : '') : message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={transcriber.isRecording ? 'Listening...' : 'Type a message...'}
-                className={`w-8/12 sm:w-10/12  border-0 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 px-1
-                    dark:text-white dark:placeholder-gray-400 resize-none focus:outline-none`}
-                style={{maxHeight: '120px', overflow: 'auto'}} // Set max height for 6 lines
-                disabled={isProcessing || transcriber.isRecording}
-            />
+                <div className='flex w-full rounded-2xl border border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 p-3'>
+                    <textarea
+                        ref={textareaRef}
+                        value={transcriber.isRecording ? (transcriber.transcript ? transcriber.transcript.transcript : '') : message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder={transcriber.isRecording ? 'Listening...' : 'Type a message...'}
+                        className={`w-8/12 sm:w-10/12  border-0 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 px-1
+                            dark:text-white dark:placeholder-gray-400 resize-none focus:outline-none`}
+                        style={{maxHeight: '120px', overflow: 'auto'}} // Set max height for 6 lines
+                        disabled={isProcessing || transcriber.isRecording}
+                    />
                     <div className="w-4/12 sm:w-2/12 flex items-end justify-end gap-2">
                         {isMicrophoneAvailable ? (
                             <button
@@ -155,7 +184,6 @@ export function ChatInput({onSendMessage, isProcessing}: ChatInputProps) {
                         </button>
                     </div>
                 </div>
-
             </form>
             <TipsDialog isOpen={isTipsOpen} onClose={() => setIsTipsOpen(false)}/>
         </>
