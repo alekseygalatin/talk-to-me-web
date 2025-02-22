@@ -15,6 +15,7 @@ export const useTranscriber = (experimentalSettings: ExperimentalSettings): Tran
     if (!browserSupportsSpeechRecognition && experimentalSettings.StreamTranscriptionSupported) {
         transcriber = useRemoteSpeechRecognitionTranscriber();
     }
+    transcriber = useRemoteSpeechRecognitionTranscriber();
     const isSpeechRecognitionSupported = browserSupportsSpeechRecognition || experimentalSettings.StreamTranscriptionSupported;
 
     return {

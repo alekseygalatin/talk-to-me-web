@@ -1,5 +1,12 @@
-type RouteResponseType = "authResponse" | "transcript" | "exception" | "disconnect";
-type RouteRequestType = "Connect" | "Transcribe" | "Disconnect";
+type RouteResponseType =
+    "authResponse"
+    | "transcript"
+    | "transcriptCompleted"
+    | "aiAgentResponse"
+    | "pollyResult"
+    | "exception";
+
+type RouteRequestType = "CreateGraph" | "StopGraph" | "Transcribe" | "StopTranscript";
 
 export interface SocketResponse<T> {
     route: RouteResponseType;
@@ -22,8 +29,16 @@ export interface SocketTranscriptResponse {
     isFinal: boolean;
 }
 
-export interface SocketDisconnectResponse {
-    result: boolean;
+export interface SocketTranscriptCompletedResponse extends SocketTranscriptResponse {
+}
+
+export interface SocketAiAgentResponse {
+    text: string;
+}
+
+export interface SocketPollyResponse {
+    audioChunk: string;
+    chunked: boolean;
 }
 
 export interface SocketExceptionResponse {
@@ -31,9 +46,12 @@ export interface SocketExceptionResponse {
     code: number;
 }
 
-export interface SocketConnectRequest {
-    token: string | null;
+export interface SocketCreateGraphRequest {
+    auth_token: string | null;
+    graph_type: string;
 }
+
+export interface SocketStopGraphRequest { }
 
 export interface SocketTranscribeRequest {
     audioData: string;
@@ -46,35 +64,46 @@ export interface AudioMetadata {
     language: string;
 };
 
-export interface SocketDisconnectRequest {
-    reason: string;
+export interface SocketStopTranscriptRequest {
 }
 
 // Deserializer function
-export const deserializeSocketResponse = (json: string): SocketResponse<SocketAuthResponse | SocketTranscriptResponse | SocketExceptionResponse | SocketDisconnectResponse> | null => {
-    const parsed = JSON.parse(json);
+export const deserializeSocketResponse =
+    (json: string): SocketResponse<
+        SocketAuthResponse |
+        SocketTranscriptResponse |
+        SocketExceptionResponse |
+        SocketTranscriptCompletedResponse |
+        SocketAiAgentResponse |
+        SocketPollyResponse
+    > | null => {
+        const parsed = JSON.parse(json);
 
-    if (!parsed.route || !parsed.result) {
-        console.error("Failed to deserialize WebSocket message: Invalid message structure");
-    }
+        if (!parsed.route || !parsed.result) {
+            console.error("Failed to deserialize WebSocket message: Invalid message structure");
+        }
 
-    switch (parsed.route) {
-        case "authResponse":
-            return parsed as SocketResponse<SocketAuthResponse>;
-        case "transcript":
-            return parsed as SocketResponse<SocketTranscriptResponse>;
-        case "exception":
-            return parsed as SocketResponse<SocketExceptionResponse>;
-        case "disconnect":
-            return parsed as SocketResponse<SocketDisconnectResponse>;
-        default:
-            console.error("Failed to deserialize WebSocket message: Unknown route type");
-            return null;
+        switch (parsed.route) {
+            case "authResponse":
+                return parsed as SocketResponse<SocketAuthResponse>;
+            case "transcript":
+                return parsed as SocketResponse<SocketTranscriptResponse>;
+            case "transcriptCompleted":
+                return parsed as SocketResponse<SocketTranscriptCompletedResponse>;
+            case "aiAgentResponse":
+                return parsed as SocketResponse<SocketAiAgentResponse>;
+            case "pollyResult":
+                return parsed as SocketResponse<SocketPollyResponse>;
+            case "exception":
+                return parsed as SocketResponse<SocketExceptionResponse>;
+            default:
+                console.error("Failed to deserialize WebSocket message: Unknown route type");
+                return null;
+        }
     }
-}
 
 // Deserializer function
-export const serializeSocketMessage = (message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest>): string => {
+export const serializeSocketMessage = (message: SocketRequest<SocketCreateGraphRequest | SocketTranscribeRequest | SocketStopTranscriptRequest>): string => {
     const flattenedMetadata = {route: message.route, ...message.request};
 
     return JSON.stringify(flattenedMetadata);

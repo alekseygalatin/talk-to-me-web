@@ -1,15 +1,21 @@
 import {useState, useRef, useEffect} from 'react';
 import {useWebSocket} from "../../api/WebSocketApi/WebsocketService.ts";
 import {
-    AudioMetadata, deserializeSocketResponse,
+    AudioMetadata,
+    deserializeSocketResponse,
     serializeSocketMessage,
     SocketAuthResponse,
-    SocketConnectRequest, SocketDisconnectRequest, SocketDisconnectResponse, SocketExceptionResponse,
-    SocketRequest, SocketTranscribeRequest, SocketTranscriptResponse
+    SocketCreateGraphRequest,
+    SocketExceptionResponse,
+    SocketRequest,
+    SocketStopTranscriptRequest,
+    SocketTranscribeRequest,
+    SocketTranscriptCompletedResponse,
+    SocketTranscriptResponse
 } from "../../api/WebSocketApi/WebsocketDTO.ts";
 import {Transcriber, TranscriberStartParams, TranscriptResult} from "./Transcriber.ts";
-import AuthService from "../auth/authService.ts";
 import {experimentalSettingsManager} from "../ExperimentalSettingsManager.ts";
+import {Auth} from "aws-amplify";
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 
@@ -23,16 +29,16 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
     const {webSocketMessage, sendWebSocketMessage} = useWebSocket();
     const [authResponse, setAuthResponse] = useState<SocketAuthResponse | null>(null);
     const authResponseRef = useRef<SocketAuthResponse | null>(null);
-    const [disconnectResponse, setDisconnectResponse] = useState<SocketDisconnectResponse | null>(null);
-    const disconnectResponseRef = useRef<SocketDisconnectResponse | null>(null);
+    const [transcriptCompletedResponse, setTranscriptCompletedResponse] = useState<SocketTranscriptCompletedResponse | null>(null);
+    const transcriptCompletedResponseRef = useRef<SocketTranscriptCompletedResponse | null>(null);
 
     useEffect(() => {
         authResponseRef.current = authResponse;
     }, [authResponse]);
 
     useEffect(() => {
-        disconnectResponseRef.current = disconnectResponse;
-    }, [disconnectResponse]);
+        transcriptCompletedResponseRef.current = transcriptCompletedResponse;
+    }, [transcriptCompletedResponse]);
 
     useEffect(() => {
         const newId = crypto.randomUUID();
@@ -83,8 +89,8 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
             return;
         }
 
-        if (deserialized.route === "disconnect") {
-            setDisconnectResponse(deserialized.result as SocketDisconnectResponse);
+        if (deserialized.route === "transcriptCompleted") {
+            setTranscriptCompletedResponse(deserialized.result as SocketTranscriptCompletedResponse);
 
             return;
         }
@@ -98,7 +104,7 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
                 return;
             }
 
-            const token = AuthService.getToken();
+            const token = (await Auth.currentSession()).getAccessToken()?.getJwtToken();
             const audioContext = new AudioContext();
             const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
             const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
@@ -107,10 +113,11 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
             mediaStreamSource.connect(scriptProcessor);
             scriptProcessor.connect(audioContext.destination);
 
-            const connectMessage: SocketRequest<SocketConnectRequest> = {
-                route: "Connect",
+            const connectMessage: SocketRequest<SocketCreateGraphRequest> = {
+                route: "CreateGraph",
                 request: {
-                    token: token
+                    graph_type: "Transcribe",
+                    auth_token: token
                 }
             };
             const metadataJson = serializeMessage(connectMessage, connectionId);
@@ -174,15 +181,13 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
             scriptProcessorRef.current = null;
 
             if (!stopByException) {
-                const disconnectRequest: SocketRequest<SocketDisconnectRequest> = {
-                    route: "Disconnect",
-                    request: {
-                        reason: "stop transcription"
-                    }
+                const stopTranscriptRequest: SocketRequest<SocketStopTranscriptRequest> = {
+                    route: "StopTranscript",
+                    request: { }
                 };
-                const disconnectMessage = serializeMessage(disconnectRequest, connectionId);
-                sendWebSocketMessage(disconnectMessage);
-                await waitForDisconnectResponse();
+                const message = serializeMessage(stopTranscriptRequest, connectionId);
+                sendWebSocketMessage(message);
+                await waitForTranscriptCompletedResponse();
             }
             setIsRecording(false);
     };
@@ -196,11 +201,11 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
         return authResponseRef.current;
     };
 
-    const waitForDisconnectResponse = async (): Promise<SocketDisconnectResponse> => {
-        while (!disconnectResponseRef.current) {
+    const waitForTranscriptCompletedResponse = async (): Promise<SocketTranscriptCompletedResponse> => {
+        while (!transcriptCompletedResponseRef.current) {
             await new Promise(resolve => setTimeout(resolve, 50));
         }
-        return disconnectResponseRef.current;
+        return transcriptCompletedResponseRef.current;
     };
 
     return {
@@ -223,7 +228,7 @@ const encodePCMChunk = (input: Float32Array): Uint8Array => {
 }
 
 const serializeMessage = (
-    message: SocketRequest<SocketConnectRequest | SocketTranscribeRequest | SocketDisconnectRequest>,
+    message: SocketRequest<SocketCreateGraphRequest | SocketTranscribeRequest | SocketStopTranscriptRequest>,
     connectionId: string): string => {
     if (experimentalSettings.WebSocket.isDevelopment) {
         const serializedBodyMessage = serializeSocketMessage(message);
