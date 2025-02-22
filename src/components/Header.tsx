@@ -9,6 +9,7 @@ import {
   } from 'lucide-react';
 import { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
+import { Auth } from 'aws-amplify';
 
 
 const Header: React.FC = () => {
@@ -109,6 +110,7 @@ const Header: React.FC = () => {
                         </Link>
                         <button
                           onClick={() => {
+                            Auth.signOut();
                             navigate("/login");
                           }}
                           className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -186,6 +188,7 @@ const Header: React.FC = () => {
                   <button
                     onClick={() => {
                       setIsMenuOpen(!isMenuOpen);
+                      Auth.signOut();
                       navigate("/login");
                     }}
                     className="flex items-center w-full py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white"
