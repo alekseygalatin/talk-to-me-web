@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Loader2, MicOff, Smile, Image, Paperclip, Plus } from 'lucide-react';
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { experimentalSettingsManager } from "../core/ExperimentalSettingsManager.ts";
+import { useTranscriber } from "../core/Transcriber/useTranscriber.ts";
 import { TipsDialog } from './TipsDialog';
 import { useAppContext } from '../contexts/AppContext';
 
@@ -14,15 +15,15 @@ export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
   const [isTipsOpen, setIsTipsOpen] = useState(false);
   const [showExtraButtons, setShowExtraButtons] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const experimentalSettings = experimentalSettingsManager.getSettings();
 
   const {
-    transcript,
-    listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable,
-  } = useSpeechRecognition();
+    transcriber,
+    isSpeechRecognitionSupported,
+    isMicrophoneAvailable
+  } = useTranscriber(experimentalSettings);
 
+  const { isRecording, transcript, clearTranscript } = transcriber;
   const { preferences } = useAppContext();
 
   const toggleExtraButtons = () => {
@@ -31,26 +32,25 @@ export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
 
   // Handle recording stop and send message
   useEffect(() => {
-        let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout;
 
-        if (!listening && transcript) {
-            // Small delay to ensure we have the final transcript
-            timeoutId = setTimeout(() => {
-                const finalMessage = transcript.trim();
-                if (finalMessage) {
-                    onSendMessage(finalMessage);
-                    setMessage('');
-                }
-                resetTranscript();
-            }, 500);
+    if (!isRecording && transcript) {
+      timeoutId = setTimeout(() => {
+        const finalMessage = transcript.transcript.trim();
+        if (finalMessage) {
+          onSendMessage(finalMessage);
+          setMessage('');
         }
+        clearTranscript();
+      }, 500);
+    }
 
-        return () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-        };
-    }, [listening, transcript, onSendMessage]);
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isRecording, transcript]);
 
   // Adjust textarea height dynamically
   useEffect(() => {
@@ -78,20 +78,20 @@ export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
     }
   };
 
-  const toggleListening = () => {
-    if (listening) {
-      SpeechRecognition.stopListening();
+  const toggleListening = async () => {
+    if (transcriber.isRecording) {
+      await transcriber.stopTranscript();
     } else {
-      setMessage(''); // Clear any existing message when starting to listen
-      resetTranscript();
-      SpeechRecognition.startListening({
+      setMessage("");
+      transcriber.clearTranscript();
+      await transcriber.startTranscript({
         continuous: true,
-        language: preferences?.currentLanguageToLearn ?? "sv-se",
+        language: preferences?.currentLanguageToLearn ?? "sv-SE",
       });
     }
   };
 
-  if (!browserSupportsSpeechRecognition) {
+  if (!isSpeechRecognitionSupported) {
     return (
       <div className="text-center p-4 text-red-500">
         Browser doesn't support speech recognition.
@@ -106,14 +106,14 @@ export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
               dark:text-white dark:placeholder-gray-400 p-2">
           <textarea
             ref={textareaRef}
-            value={listening ? transcript : message}
+            value={transcriber.isRecording ? (transcriber.transcript ? transcriber.transcript.transcript : '') : message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={listening ? 'Listening...' : 'Type a message...'}
+            placeholder={transcriber.isRecording ? 'Listening...' : 'Type a message...'}
             className="flex-1 border-0 bg-white text-gray-900 dark:bg-gray-800 px-1
                 dark:text-white dark:placeholder-gray-400 resize-none focus:outline-none"
             style={{ maxHeight: '120px', overflow: 'auto' }}
-            disabled={isProcessing || listening}
+            disabled={isProcessing || transcriber.isRecording}
           />
           <div className="flex items-center justify-between mt-2">
             <div className="relative flex items-center">
@@ -155,14 +155,14 @@ export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
                   type="button"
                   onClick={toggleListening}
                   className={`p-2 rounded-full transition-all ${
-                    listening
+                    transcriber.isRecording
                       ? 'bg-red-500 text-white animate-pulse hover:bg-red-600'
                       : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   }`}
                   disabled={isProcessing}
-                  title={listening ? 'Stop listening' : 'Start listening'}
+                  title={transcriber.isRecording ? 'Stop listening' : 'Start listening'}
                 >
-                  {listening ? (
+                  {transcriber.isRecording ? (
                     <MicOff className="w-5 h-5" />
                   ) : (
                     <Mic className="w-5 h-5" />
@@ -180,7 +180,7 @@ export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
               )}
               <button
                 type="submit"
-                disabled={!message.trim() || isProcessing || listening}
+                disabled={!message.trim() || isProcessing || transcriber.isRecording}
                 className="p-2 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 
                       text-white disabled:hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white dark:disabled:hover:bg-blue-600"
                 title="Send Message"
