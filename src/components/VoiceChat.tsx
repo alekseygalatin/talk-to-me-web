@@ -17,9 +17,7 @@ const VoiceChat: React.FC = () => {
     const [conversationState, setConversationState] = useState<ConversationState>(
         ConversationState.Idling
     );
-    const [audioBlob, SetAudioBlob] = useState<Blob | null>(null);
     const [statusIndicator, setStatusIndicator] = useState("");
-    const audioRef = useRef<HTMLAudioElement | null>(null);
 
 
     const {
@@ -27,42 +25,23 @@ const VoiceChat: React.FC = () => {
         stopProcessing,
         stopCurrentProcessingStep,
         clearState,
-        graphProcessingData,
+        graphProcessingStatus,
+        transcript
     } = useGraphProcessing();
     const {preferences} = useAppContext();
 
     useEffect(() => {
-        if (audioBlob) {
-            const url = URL.createObjectURL(audioBlob);
-
-            const audio = new Audio(url);
-            audioRef.current = audio;
-            audio.play().catch((error) => console.error("Playback error:", error));
-
-            audio.onended = () => {
-                URL.revokeObjectURL(url);
-            };
-
-            return () => {
-                if (audioRef.current) {
-                    audioRef.current.pause();
-                    URL.revokeObjectURL(url);
-                    audioRef.current = null;
-                }
-            };
-        }
-    }, [audioBlob]);
-
-    useEffect(() => {
-        switch (graphProcessingData?.GraphProcessingStatus) {
+        switch (graphProcessingStatus) {
             case "Idling": {
                 setConversationState(ConversationState.Idling);
-                setIsConversationStarted(false);
                 break;
             }
             case "Transcribing": {
                 setConversationState(ConversationState.Listening);
-                setIsConversationStarted(true);
+                break;
+            }
+            case "Speaking": {
+                setConversationState(ConversationState.Speaking);
                 break;
             }
             case "Processing": {
@@ -70,13 +49,7 @@ const VoiceChat: React.FC = () => {
                 break;
             }
         }
-
-        if(graphProcessingData?.AudioData){
-            setIsConversationStarted(false);
-            setConversationState(ConversationState.Speaking);
-            SetAudioBlob(graphProcessingData.AudioData);
-        }
-    }, [graphProcessingData]);
+    }, [graphProcessingStatus]);
 
     useEffect(() => {
         switch (conversationState) {
@@ -102,30 +75,25 @@ const VoiceChat: React.FC = () => {
 
     const handleStartLiveConversation = async () => {
         setIsConversationStarted(true);
-        setConversationState(ConversationState.Listening);
-        stopAudio();
 
         await startProcessing({
             GraphType: "TranscribeWithBedrockAndPolly",
             TranscriberStartParams: {
                 continuous: true,
                 language: preferences?.currentLanguageToLearn ?? "sv-SE",
-            }
+            },
+            Circular: true
         });
 
         console.log("Starting live conversation...");
     };
 
     const handleEndLiveConversation = async () => {
-        await stopCurrentProcessingStep();
+        setIsConversationStarted(false);
+        await stopProcessing();
+        // setConversationState(ConversationState.Idling);
+        // setIsConversationStarted(false);
         console.log("Ending live conversation...");
-    };
-
-    const stopAudio = () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-        }
     };
 
     const generateRandomHeight = () => Math.random() * (32 - 4) + 4;
