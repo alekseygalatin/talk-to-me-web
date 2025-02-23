@@ -6,14 +6,14 @@ import { withAuth } from '../components/withAuth';
 
 const UserPreferences: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 px-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md"
         >
         
-        <div className="text-center mb-8">
+        <div className="text-center my-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600 mb-4">
             <UserCog className="w-8 h-8 text-white" />
           </div>
