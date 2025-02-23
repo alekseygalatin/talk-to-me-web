@@ -7,6 +7,7 @@ import ConfirmAccountForm from "../components/ConfirmAccountForm";
 import ForgotPasswordForm from "../components/ForgotPasswordForm";
 import { Auth } from 'aws-amplify';
 import { useNavigate } from "react-router-dom";
+import Spinner from "../components/Spinner";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ export function Login() {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true); 
 
   const tabVariants = {
     initial: { opacity: 0, x: 0 },
@@ -25,22 +27,26 @@ export function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isMounted = true;
-
     Auth.currentAuthenticatedUser()
       .then((currentUser) => {
-        if (isMounted && currentUser) {
+        if (currentUser) {
           navigate("/select-partner");
         }
       })
       .catch((error) => {
         console.error("User not authenticated:", error);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+      })
+      .finally(() => setIsLoading(false)); 
   }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <Spinner 
+        isLoading={isLoading}
+        global={false}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 px-4">

@@ -151,135 +151,137 @@ const Header: React.FC = () => {
       </div>
 
       {/* Mobile Menu */}
-      <Menu>
-        {({ open }) => (
-          <>
-            {/* Mobile Menu Button */}
-            <div className="md:hidden ml-2 flex items-center absolute top-3 right-3">
-              <MenuButton
-                className={
-                  "rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                }
-              >
-                {open ? (
-                  <X className="block h-6 w-6 text-gray-700 dark:text-gray-300" />
-                ) : (
-                  <MenuIcon className="block h-6 w-6 text-gray-700 dark:text-gray-300" />
-                )}
-              </MenuButton>
-            </div>
-            <div className="md:hidden">
-              <AnimatePresence>
-                <MenuItems
-                  as={motion.div}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: open ? 1 : 0, height: open ? "auto" : 0 }}
-                  exit={{ opacity: 0, height: 0 }}
-                  static
-                  className="origin-top"
+      <div className="w-full">
+        <Menu>
+          {({ open }) => (
+            <>
+              {/* Mobile Menu Button */}
+              <div className="md:hidden ml-2 flex items-center absolute top-3 right-3">
+                <MenuButton
+                  className={
+                    "rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                  }
                 >
-                  <div className="px-4 pt-2 pb-3 space-y-1 sm:px-3">
-                    <MenuItem>
-                      <NavLink
-                        to="/select-partner"
-                        className={({ isActive }) =>
-                          `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
-                            isActive ? "bg-gray-100 dark:bg-gray-700" : ""
-                          }`
-                        }
-                      >
-                        <LayoutDashboard className="w-5 h-5" /> Dashboard
-                      </NavLink>
-                    </MenuItem>
-                    <MenuItem>
-                      <NavLink
-                        to="/words"
-                        className={({ isActive }) =>
-                          `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
-                            isActive ? "bg-gray-100 dark:bg-gray-700" : ""
-                          }`
-                        }
-                      >
-                        <BookMarked className="w-5 h-5" /> Dictionary
-                      </NavLink>
-                    </MenuItem>
-                    {/* User Menu */}
-                    <hr />
-                    <MenuItem>
-                      <NavLink
-                        to="/user-preferences"
-                        className={({ isActive }) =>
-                          `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
-                            isActive ? "bg-gray-100 dark:bg-gray-700" : ""
-                          }`
-                        }
-                      >
-                        <UserCog className="w-5 h-5" />
-                        Profile Settings
-                      </NavLink>
-                    </MenuItem>
-                    {currentLanguage && (
+                  {open ? (
+                    <X className="block h-6 w-6 text-gray-700 dark:text-gray-300" />
+                  ) : (
+                    <MenuIcon className="block h-6 w-6 text-gray-700 dark:text-gray-300" />
+                  )}
+                </MenuButton>
+              </div>
+              <div className="md:hidden">
+                <AnimatePresence>
+                  <MenuItems
+                    as={motion.div}
+                    initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                    animate={{ opacity: open ? 1 : 0, height: open ? "auto" : 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="origin-top"
+                    static
+                  >
+                    <div className="px-4 pt-2 pb-3 space-y-1 sm:px-3">
                       <MenuItem>
                         <NavLink
-                          to="/select-language-to-learn"
+                          to="/select-partner"
                           className={({ isActive }) =>
                             `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
                               isActive ? "bg-gray-100 dark:bg-gray-700" : ""
                             }`
                           }
                         >
-                          <Globe className="w-5 h-5" />
-                          {currentLanguage?.name} (change)
+                          <LayoutDashboard className="w-5 h-5" /> Dashboard
                         </NavLink>
                       </MenuItem>
-                    )}
-                    <MenuItem>
-                      <button
-                        onClick={() => {
-                          Auth.signOut();
-                          clearData();
-                          navigate("/login");
-                        }}
-                        className="flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        Log Out
-                      </button>
-                    </MenuItem>
-                    <hr />
-                    <div className="flex items-center gap-2 px-3 py-4 text-sm text-gray-700 dark:text-gray-200">
-                      <div className="inline-block">
-                        <button
-                          onClick={toggleTheme}
-                          className="relative flex items-center px-2 py-1 w-14 h-6 rounded-full bg-gray-200 dark:bg-gray-600 transition-colors"
+                      <MenuItem>
+                        <NavLink
+                          to="/words"
+                          className={({ isActive }) =>
+                            `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
+                              isActive ? "bg-gray-100 dark:bg-gray-700" : ""
+                            }`
+                          }
                         >
-                          <span
-                            className={`absolute top-0 left-0 w-6 h-6 bg-gray-400 rounded-full transition-transform ${
-                              theme === "dark"
-                                ? "transform translate-x-8 bg-blue-600"
-                                : "transform translate-x-0"
-                            }`}
-                          ></span>
-                          <span
-                            className={`absolute w-full flex items-center justify-between px-2 text-xs font-medium uppercase ${
-                              theme === "dark"
-                                ? "text-gray-300"
-                                : "text-gray-600"
-                            }`}
-                          ></span>
+                          <BookMarked className="w-5 h-5" /> Dictionary
+                        </NavLink>
+                      </MenuItem>
+                      {/* User Menu */}
+                      <hr />
+                      <MenuItem>
+                        <NavLink
+                          to="/user-preferences"
+                          className={({ isActive }) =>
+                            `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
+                              isActive ? "bg-gray-100 dark:bg-gray-700" : ""
+                            }`
+                          }
+                        >
+                          <UserCog className="w-5 h-5" />
+                          Profile Settings
+                        </NavLink>
+                      </MenuItem>
+                      {currentLanguage && (
+                        <MenuItem>
+                          <NavLink
+                            to="/select-language-to-learn"
+                            className={({ isActive }) =>
+                              `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
+                                isActive ? "bg-gray-100 dark:bg-gray-700" : ""
+                              }`
+                            }
+                          >
+                            <Globe className="w-5 h-5" />
+                            {currentLanguage?.name} (change)
+                          </NavLink>
+                        </MenuItem>
+                      )}
+                      <MenuItem>
+                        <button
+                          onClick={() => {
+                            Auth.signOut();
+                            clearData();
+                            navigate("/login");
+                          }}
+                          className="flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          Log Out
                         </button>
-                      </div>
-                      <div className="flex items-center text-base">
-                        <span>Dark mode</span>
+                      </MenuItem>
+                      <hr />
+                      <div className="flex items-center gap-2 px-3 py-4 text-sm text-gray-700 dark:text-gray-200">
+                        <div className="inline-block">
+                          <button
+                            onClick={toggleTheme}
+                            className="relative flex items-center px-2 py-1 w-14 h-6 rounded-full bg-gray-200 dark:bg-gray-600 transition-colors"
+                          >
+                            <span
+                              className={`absolute top-0 left-0 w-6 h-6 bg-gray-400 rounded-full transition-transform ${
+                                theme === "dark"
+                                  ? "transform translate-x-8 bg-blue-600"
+                                  : "transform translate-x-0"
+                              }`}
+                            ></span>
+                            <span
+                              className={`absolute w-full flex items-center justify-between px-2 text-xs font-medium uppercase ${
+                                theme === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-600"
+                              }`}
+                            ></span>
+                          </button>
+                        </div>
+                        <div className="flex items-center text-base">
+                          <span>Dark mode</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </MenuItems>
-              </AnimatePresence>
-            </div>
-          </>
-        )}
-      </Menu>
+                  </MenuItems>
+                </AnimatePresence>
+              </div>
+            </>
+          )}
+        </Menu>
+      </div>
     </header>
   );
 };
