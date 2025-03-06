@@ -1,6 +1,6 @@
 import {motion} from "framer-motion";
 import {Mic, MicOff} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 import {useAppContext} from "../contexts/AppContext.tsx";
 import {useGraphProcessing} from "../core/GraphProcessing.ts";
 
@@ -23,10 +23,7 @@ const VoiceChat: React.FC = () => {
     const {
         startProcessing,
         stopProcessing,
-        stopCurrentProcessingStep,
-        clearState,
         graphProcessingStatus,
-        transcript
     } = useGraphProcessing();
     const {preferences} = useAppContext();
 

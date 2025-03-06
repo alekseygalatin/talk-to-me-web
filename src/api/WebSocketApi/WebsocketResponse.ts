@@ -1,21 +1,20 @@
-type RouteResponseType =
-    "authResponse"
-    | "transcript"
-    | "transcriptCompleted"
-    | "aiAgentResponse"
-    | "pollyResult"
-    | "exception";
-
-type RouteRequestType = "CreateGraph" | "StopGraph" | "Transcribe" | "StopTranscript";
+export enum RouteResponseType {
+    AuthResponse = "authResponse",
+    Transcript = "transcript",
+    TranscriptCompleted = "transcriptCompleted",
+    AiAgentResponse = "aiAgentResponse",
+    PollyResult = "pollyResult",
+    Exception = "exception",
+    GraphCreated = "graphCreated"
+}
 
 export interface SocketResponse<T> {
     route: RouteResponseType;
     result: T;
 }
 
-export interface SocketRequest<T> {
-    route: RouteRequestType;
-    request: T;
+export interface SocketGraphCreated {
+    graphType: string;
 }
 
 export interface SocketAuthResponse {
@@ -46,30 +45,10 @@ export interface SocketExceptionResponse {
     code: number;
 }
 
-export interface SocketCreateGraphRequest {
-    auth_token: string | null;
-    graph_type: string;
-}
-
-export interface SocketStopGraphRequest { }
-
-export interface SocketTranscribeRequest {
-    audioData: string;
-    audioMetadata: AudioMetadata | null;
-}
-
-export interface AudioMetadata {
-    sampleRate: number;
-    codec: string;
-    language: string;
-};
-
-export interface SocketStopTranscriptRequest {
-}
-
 // Deserializer function
 export const deserializeSocketResponse =
     (json: string): SocketResponse<
+        SocketGraphCreated |
         SocketAuthResponse |
         SocketTranscriptResponse |
         SocketExceptionResponse |
@@ -79,32 +58,27 @@ export const deserializeSocketResponse =
     > | null => {
         const parsed = JSON.parse(json);
 
-        if (!parsed.route || !parsed.result) {
+        if (!parsed.route) {
             console.error("Failed to deserialize WebSocket message: Invalid message structure");
         }
 
-        switch (parsed.route) {
-            case "authResponse":
+        switch (parsed.route as RouteResponseType) {
+            case RouteResponseType.AuthResponse:
                 return parsed as SocketResponse<SocketAuthResponse>;
-            case "transcript":
+            case RouteResponseType.GraphCreated:
+                return parsed as SocketResponse<SocketGraphCreated>;
+            case RouteResponseType.Transcript:
                 return parsed as SocketResponse<SocketTranscriptResponse>;
-            case "transcriptCompleted":
+            case RouteResponseType.TranscriptCompleted:
                 return parsed as SocketResponse<SocketTranscriptCompletedResponse>;
-            case "aiAgentResponse":
+            case RouteResponseType.AiAgentResponse:
                 return parsed as SocketResponse<SocketAiAgentResponse>;
-            case "pollyResult":
+            case RouteResponseType.PollyResult:
                 return parsed as SocketResponse<SocketPollyResponse>;
-            case "exception":
+            case RouteResponseType.Exception:
                 return parsed as SocketResponse<SocketExceptionResponse>;
             default:
-                console.error("Failed to deserialize WebSocket message: Unknown route type");
+                console.error("Failed to deserialize WebSocket message: Unknown route type", parsed.route);
                 return null;
         }
     }
-
-// Deserializer function
-export const serializeSocketMessage = (message: SocketRequest<SocketCreateGraphRequest | SocketTranscribeRequest | SocketStopTranscriptRequest>): string => {
-    const flattenedMetadata = {route: message.route, ...message.request};
-
-    return JSON.stringify(flattenedMetadata);
-}

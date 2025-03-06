@@ -12,6 +12,7 @@ export interface Transcriber {
     clearTranscript(): void;
 
     transcript: TranscriptResult | null;
+
     isRecording: boolean;
 }
 

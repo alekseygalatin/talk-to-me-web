@@ -1,17 +1,19 @@
 import {useEffect, useRef, useState} from "react";
 import {
-    AudioMetadata,
     deserializeSocketResponse,
-    serializeSocketMessage,
+    RouteResponseType,
     SocketAuthResponse,
-    SocketCreateGraphRequest, SocketExceptionResponse, SocketPollyResponse,
-    SocketRequest, SocketStopGraphRequest, SocketStopTranscriptRequest,
-    SocketTranscribeRequest, SocketTranscriptCompletedResponse, SocketTranscriptResponse
-} from "../api/WebSocketApi/WebsocketDTO.ts";
+    SocketExceptionResponse,
+    SocketGraphCreated,
+    SocketPollyResponse,
+    SocketTranscriptCompletedResponse,
+    SocketTranscriptResponse
+} from "../api/WebSocketApi/WebsocketResponse.ts";
 import {useWebSocket} from "../api/WebSocketApi/WebsocketService.ts";
 import {experimentalSettingsManager} from "./ExperimentalSettingsManager.ts";
 import {Auth} from "aws-amplify";
 import {TranscriberStartParams, TranscriptResult} from "./Transcriber/Transcriber.ts";
+import {AudioMetadata, SocketRequestBuilder} from "../api/WebSocketApi/WebsocketRequest.ts";
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 
@@ -24,23 +26,18 @@ export interface GraphProcessingParams {
     Circular: boolean;
 }
 
-export interface GraphProcessingData {
-    GraphProcessingStatus: GraphProcessingStatus;
-    Transcript: string | null;
-    AudioData: Blob | null;
-}
-
 export const useGraphProcessing = () => {
     const [connectionId, setConnectionId] = useState('');
     const {webSocketMessage, sendWebSocketMessage} = useWebSocket();
 
-    const [transcriptCompletedResponse, setTranscriptCompletedResponse] = useState<SocketTranscriptCompletedResponse | null>(null);
-    const [aiAgentResponse, setAiAgentResponse] = useState<SocketTranscriptCompletedResponse | null>(null);
-    const [authResponse, setAuthResponse] = useState<SocketAuthResponse | null>(null);
-
+    const graphCreatedResponseRef = useRef<SocketGraphCreated | null>(null);
     const authResponseRef = useRef<SocketAuthResponse | null>(null);
     const transcriptCompletedResponseRef = useRef<SocketTranscriptCompletedResponse | null>(null);
     const audioDataRef = useRef<Blob | null>(null);
+
+    const [aiAgentResponse, setAiAgentResponse] = useState<SocketTranscriptCompletedResponse | null>(null);
+
+
     const stopProcessingRequestedRef = useRef<boolean>(false);
 
     const [isProcessing, setIsProcessing] = useState(false);
@@ -53,14 +50,6 @@ export const useGraphProcessing = () => {
     const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     let resolvePlayback: (() => void) | null = null;
-
-    useEffect(() => {
-        authResponseRef.current = authResponse;
-    }, [authResponse]);
-
-    useEffect(() => {
-        transcriptCompletedResponseRef.current = transcriptCompletedResponse;
-    }, [transcriptCompletedResponse]);
 
     useEffect(() => {
         audioDataRef.current = audioData;
@@ -81,26 +70,27 @@ export const useGraphProcessing = () => {
             return;
         }
 
-        if (deserialized.route === "authResponse") {
-            const authResponse = deserialized.result as SocketAuthResponse;
-            setAuthResponse(authResponse);
+        if (deserialized.route === RouteResponseType.AuthResponse) {
+            authResponseRef.current = deserialized.result as SocketAuthResponse;
 
             return;
         }
 
-        if (deserialized.route === "transcript") {
+        if (deserialized.route === RouteResponseType.GraphCreated) {
+            graphCreatedResponseRef.current = deserialized.result as SocketGraphCreated;
+
+            return;
+        }
+
+        if (deserialized.route === RouteResponseType.Transcript) {
             const transcriptResult = deserialized.result as SocketTranscriptResponse;
             if (transcriptResult.isFinal) {
                 setTranscript((prevState: TranscriptResult | null) => {
-                    if (prevState) {
-                        return {
-                            isFinal: true,
-                            transcript: `${prevState.transcript} ${transcriptResult.text}`
-                        }
-                    }
+                    const transcript = prevState ? `${prevState.transcript} ${transcriptResult.text}` : `${transcriptResult.text}`;
+                    console.log("Transcript:", transcript);
                     return {
                         isFinal: true,
-                        transcript: `${transcriptResult.text}`
+                        transcript: transcript
                     }
                 });
             }
@@ -108,21 +98,22 @@ export const useGraphProcessing = () => {
             return;
         }
 
-        if (deserialized.route === "transcriptCompleted") {
-            setTranscriptCompletedResponse(deserialized.result as SocketTranscriptCompletedResponse);
+        if (deserialized.route === RouteResponseType.TranscriptCompleted) {
+            transcriptCompletedResponseRef.current = deserialized.result as SocketTranscriptCompletedResponse;
             console.log("Transcript completed message received");
 
             return;
         }
 
-        if (deserialized.route === "aiAgentResponse") {
+        if (deserialized.route === RouteResponseType.AiAgentResponse) {
             setAiAgentResponse(deserialized.result as SocketTranscriptCompletedResponse);
 
             return;
         }
 
-        if (deserialized.route === "pollyResult") {
-            const audioData = deserialized.result.audioChunk;
+        if (deserialized.route === RouteResponseType.PollyResult) {
+            const audioData = (deserialized.result as SocketPollyResponse).audioChunk;
+            // const audioData = deserialized.result.audioChunk;
             const audioBytes = Uint8Array.from(atob(audioData), (c) =>
                 c.charCodeAt(0)
             );
@@ -131,10 +122,10 @@ export const useGraphProcessing = () => {
             return;
         }
 
-        if (deserialized.route === "exception") {
+        if (deserialized.route === RouteResponseType.Exception) {
             const errorResult = deserialized.result as SocketExceptionResponse;
             console.log("Error:", errorResult);
-            // stopProcessing();
+            stopProcessing();
 
             return;
         }
@@ -155,60 +146,65 @@ export const useGraphProcessing = () => {
             await startProcessingInternal(parameters);
             await stopProcessingInternal();
 
-            // TODO - find a better way, but now it is fast and difficult to start speaking in a second second interval
-            setTimeout(()=>{}, 1_000);
+            // TODO - find a better way, but now it is fast and difficult to start speaking in a second interval
+            setTimeout(() => {
+            }, 1_000);
         }
     }
+
     const startProcessingInternal = async (parameters: GraphProcessingParams) => {
-        setIsProcessing(true);
+        try {
 
-        // TODO - add loading spinner or any alternative to notify we are starting live conversation
-        setGraphProcessingStatus("Processing");
+            setIsProcessing(true);
 
-        const token = (await Auth.currentSession()).getAccessToken()?.getJwtToken();
-        const connectMessage: SocketRequest<SocketCreateGraphRequest> = {
-            route: "CreateGraph",
-            request: {
-                graph_type: parameters.GraphType,
-                auth_token: token
-            }
-        };
-        const metadataJson = serializeMessage(connectMessage, connectionId);
-        sendWebSocketMessage(metadataJson);
-        const authResponse = await waitForAuthenticationResult();
-        if (!authResponse.authSuccessful) {
-            console.error("Authentication failed");
-            return;
-        }
-
-        if(isStopped()) return;
-
-        if (parameters.GraphType === "Transcribe" || parameters.GraphType === "TranscribeWithBedrockAndPolly") {
-            console.log("Starting transcription");
-            setGraphProcessingStatus("Transcribing");
-            if (!await tryStartTranscript(parameters.TranscriberStartParams)) {
-                setGraphProcessingStatus("Idling");
-                throw new Error("Failed to start transcription");
-            }
-
-            if(isStopped()) return;
-
-            await waitForTranscriptCompletedResponse();
-            console.log("Transcription completed");
-        }
-
-        if(isStopped()) return;
-
-        if (parameters.GraphType === "TranscribeWithBedrockAndPolly") {
-            console.log("Starting audio processing");
+            // TODO - add loading spinner or any alternative to notify we are starting live conversation
             setGraphProcessingStatus("Processing");
-            await waitForPollyResponse();
 
-            if(isStopped()) return;
+            const token = (await Auth.currentSession()).getAccessToken()?.getJwtToken();
+            const createGraphRequest = SocketRequestBuilder
+                .createGraph(parameters.GraphType, token, parameters.TranscriberStartParams.language)
+                .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+            sendWebSocketMessage(createGraphRequest);
 
-            setGraphProcessingStatus("Speaking");
-            await playAudio(audioDataRef.current);
-            console.log("Audio processing completed");
+            await waitForResult(graphCreatedResponseRef);
+
+            const authResponse = await waitForResult(authResponseRef);
+            if (!authResponse.authSuccessful) {
+                console.error("Authentication failed");
+                return;
+            }
+
+            if (isStopped()) return;
+
+            if (parameters.GraphType === "Transcribe" || parameters.GraphType === "TranscribeWithBedrockAndPolly") {
+                console.log("Starting transcription");
+                setGraphProcessingStatus("Transcribing");
+                if (!await tryStartTranscript(parameters.TranscriberStartParams)) {
+                    setGraphProcessingStatus("Idling");
+                    return;
+                }
+
+                if (isStopped()) return;
+
+                await waitForResult(transcriptCompletedResponseRef, 60);
+                console.log("Transcription completed");
+            }
+
+            if (isStopped()) return;
+
+            if (parameters.GraphType === "TranscribeWithBedrockAndPolly") {
+                console.log("Starting audio processing");
+                setGraphProcessingStatus("Processing");
+                await waitForResult(audioDataRef, 60);
+
+                if (isStopped()) return;
+
+                setGraphProcessingStatus("Speaking");
+                await playAudio(audioDataRef.current);
+                console.log("Audio processing completed");
+            }
+        } catch (error) {
+            console.error("Error during processing:", error);
         }
     }
 
@@ -228,45 +224,44 @@ export const useGraphProcessing = () => {
             mediaStreamSource.connect(scriptProcessor);
             scriptProcessor.connect(audioContext.destination);
 
-            let sendMetadata = true;
             let lastAudioDataReceivedTime = Date.now();
+            let stoppedBySilence = false;
             scriptProcessor.onaudioprocess = (event: AudioProcessingEvent) => {
-                const audioData = event.inputBuffer.getChannelData(0);
-                const audioChunk = encodePCMChunk(audioData);
-                const binaryString = convertToBase64(audioChunk);
+                if (stoppedBySilence || isStopped()) {
+                    return;
+                }
+
+                const audioBuffer = event.inputBuffer.getChannelData(0);
                 const audioMetadata: AudioMetadata = {
                     sampleRate: event.inputBuffer.sampleRate,
-                    codec: 'pcm',
-                    language: params.language
+                    codec: 'pcm'
                 };
 
-                const isSilence = detectSilence(audioData);
+                const isSilence = detectSilence(audioBuffer);
                 if (isSilence) {
                     if (Date.now() - lastAudioDataReceivedTime > 3_500) {
                         console.log("Silence detected, stopping transcription");
+                        stoppedBySilence = true;
                         stopTranscribingInternal(false);
+
+                        return;
                     }
                 } else {
                     lastAudioDataReceivedTime = Date.now();
                 }
-                const transcriptMessage: SocketRequest<SocketTranscribeRequest> = {
-                    route: "Transcribe",
-                    request: {
-                        audioData: binaryString,
-                        audioMetadata: sendMetadata ? audioMetadata : null
-                    }
-                };
 
-                const metadataJson = serializeMessage(transcriptMessage, connectionId);
-                sendWebSocketMessage(metadataJson);
-
-                sendMetadata = false;
+                const audioChunk = encodePCMChunk(audioBuffer);
+                const request = SocketRequestBuilder
+                    .transcribe(audioChunk, audioMetadata)
+                    .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+                sendWebSocketMessage(request);
             };
 
             audioContextRef.current = audioContext;
             mediaStreamRef.current = mediaStream;
             scriptProcessorRef.current = scriptProcessor;
-            console.log("Try Starting audio transcription - started");
+            console.log("Transcription - started");
+
             return true;
         } catch (error) {
             console.error('Error starting audio transcription:', error);
@@ -311,25 +306,18 @@ export const useGraphProcessing = () => {
     }
 
     const stopProcessingInternal = async () => {
-        setGraphProcessingStatus("Idling");
+        setGraphProcessingStatus("Processing");
         stopAudio();
 
         await stopTranscribingInternal(false);
-        const stopGraphRequest: SocketRequest<SocketStopGraphRequest> = {
-            route: "StopGraph",
-            request: {}
-        };
-        const message = serializeMessage(stopGraphRequest, connectionId);
-        sendWebSocketMessage(message);
+        const createGraphRequest = SocketRequestBuilder
+            .stopGraph()
+            .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+        sendWebSocketMessage(createGraphRequest);
 
         setIsProcessing(false);
         clearState();
-    }
-
-    const stopCurrentProcessingStep = async () => {
-        if (graphProcessingStatus === "Transcribing") {
-            await stopTranscribingInternal(false);
-        }
+        setGraphProcessingStatus("Idling");
     }
 
     const clearState = () => {
@@ -339,9 +327,7 @@ export const useGraphProcessing = () => {
         audioContextRef.current = null;
         mediaStreamRef.current = null;
         scriptProcessorRef.current = null;
-        setAuthResponse(null);
         setTranscript(null);
-        setTranscriptCompletedResponse(null);
         setAudioData(null);
     }
 
@@ -349,23 +335,26 @@ export const useGraphProcessing = () => {
         console.log("Stopping transcription internal");
         scriptProcessorRef.current?.disconnect();
         if (audioContextRef.current?.state !== "closed") {
+            mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
             audioContextRef.current?.close();
         }
-        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+
+        // If transcriptCompletedResponseRef not null that mean transcription already stopped, do nothing
+        if (transcriptCompletedResponseRef.current) {
+            return;
+        }
 
         if (!stopByException) {
-            const stopTranscriptRequest: SocketRequest<SocketStopTranscriptRequest> = {
-                route: "StopTranscript",
-                request: {}
-            };
-            const message = serializeMessage(stopTranscriptRequest, connectionId);
-            sendWebSocketMessage(message);
+            const createGraphRequest = SocketRequestBuilder
+                .stopTranscript()
+                .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+            sendWebSocketMessage(createGraphRequest);
         }
     };
 
     const stopAudio = () => {
-        console.log("Stopping audio");
         if (audioRef.current) {
+            console.log("Stopping audio");
             audioRef.current.pause();
             audioRef.current.currentTime = 0; // Reset playback to start
             resolvePlayback?.(); // Resolve the Promise to prevent blocking
@@ -374,41 +363,34 @@ export const useGraphProcessing = () => {
         }
     };
 
-    // need to add timeout logic and wait no more than 1-2 seconds or 10 for polly
-    const waitForAuthenticationResult = async (): Promise<SocketAuthResponse> => {
-        while (!authResponseRef.current) {
+    const waitForResult = async <T>(
+        ref: React.MutableRefObject<T | null>,
+        timeoutSeconds: number = 5
+    ): Promise<T> => {
+        const startTime = Date.now();
+        const timeoutMs = timeoutSeconds * 1000;
+
+        while (!ref.current && !isStopped()) {
+            if (Date.now() - startTime > timeoutMs) {
+                throw new Error(`Operation timed out after ${timeoutSeconds} seconds`);
+            }
             await new Promise(resolve => setTimeout(resolve, 50));
         }
-        return authResponseRef.current;
+
+        return ref.current;
     };
 
-    const waitForTranscriptCompletedResponse = async (): Promise<SocketTranscriptCompletedResponse> => {
-        transcriptCompletedResponseRef.current = null;
-
-        while (!transcriptCompletedResponseRef.current) {
-            await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        return transcriptCompletedResponseRef.current;
-    };
-
-    const waitForPollyResponse = async (): Promise<Blob> => {
-        while (!audioDataRef.current) {
-            await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        return audioDataRef.current;
-    };
-
-    const isStopped: () => boolean | null = () => {
-        return stopProcessingRequestedRef.current;
+    const isStopped: () => boolean = () => {
+        return stopProcessingRequestedRef.current === true;
     }
 
     return {
         startProcessing,
         stopProcessing,
-        stopCurrentProcessingStep,
         clearState,
         graphProcessingStatus,
-        transcript
+        transcript,
+        isProcessing
     };
 }
 
@@ -423,35 +405,7 @@ const encodePCMChunk = (input: Float32Array): Uint8Array => {
     return new Uint8Array(buffer);
 }
 
-const serializeMessage = (
-    message: SocketRequest<SocketCreateGraphRequest | SocketStopGraphRequest | SocketTranscribeRequest | SocketStopTranscriptRequest>,
-    connectionId: string): string => {
-    if (experimentalSettings.WebSocket.isDevelopment) {
-        const serializedBodyMessage = serializeSocketMessage(message);
-        const request = {
-            requestContext: {
-                connectionId: connectionId,
-                domainName: "someName",
-                stage: "localdev",
-                routeKey: "$default"
-            },
-            body: serializedBodyMessage
-        };
-        return JSON.stringify(request);
-    }
-
-    return serializeSocketMessage(message);
-}
-
 const detectSilence = (chunk: Float32Array): boolean => {
     const rms = Math.sqrt(chunk.reduce((sum, sample) => sum + sample * sample, 0) / chunk.length);
     return rms < 0.01; // Silence threshold
-}
-
-const convertToBase64 = (buffer: Uint8Array): string => {
-    let binaryString = "";
-    for (const byte of buffer) {
-        binaryString += String.fromCharCode(byte);
-    }
-    return btoa(binaryString);
 }

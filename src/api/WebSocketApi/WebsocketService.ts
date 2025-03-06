@@ -20,6 +20,7 @@ export const useWebSocket = () => {
 
         // Handle incoming messages
         socket.onmessage = (event) => {
+            // console.log("WebSocket message received:", event.data);
             setMessages(() => event.data); // Append message to state
         };
 
