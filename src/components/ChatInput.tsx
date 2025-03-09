@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Loader2, MicOff, Smile, Image, Paperclip, Plus } from 'lucide-react';
+import { Mic, Send, Loader2, MicOff, Trash2, Image, Paperclip, Plus } from 'lucide-react';
 import { experimentalSettingsManager } from "../core/ExperimentalSettingsManager.ts";
 import { useTranscriber } from "../core/Transcriber/useTranscriber.ts";
 import { TipsDialog } from './TipsDialog';
@@ -7,10 +7,11 @@ import { useAppContext } from '../contexts/AppContext';
 
 interface ChatInputProps {
   onSendMessage: (text: string) => void;
+  onCleanHistory: () => void;
   isProcessing: boolean;
 }
 
-export function ChatInput({ onSendMessage, isProcessing }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isProcessing, onCleanHistory }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isTipsOpen, setIsTipsOpen] = useState(false);
   const [showExtraButtons, setShowExtraButtons] = useState(false);

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MessageBubble } from "../components/MessageBubble";
 import { ChatInput } from "../components/ChatInput";
 import { MessageSquare } from "lucide-react";
-import { fetchHistory } from "../api/historyApi.ts"; // Import the new API function
+import {cleanHistoryAgent, fetchHistory} from "../api/historyApi.ts"; // Import the new API function
 import {
   invokeConversationAgent,
   invokeRetailerAgent,
@@ -215,6 +215,60 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
     }
   };
 
+  const handleCleanHistory = async () => {
+    try {
+      if (partnerId === "4") {
+        await cleanHistoryAgent(
+            preferences?.currentLanguageToLearn!,
+            "wordTeacherAgent"
+        );
+
+        setMessages((prevMessages) => {
+          prevMessages = [];
+          return prevMessages;
+        });
+
+        setIsProcessing(true);
+        
+        const response = await invokeStoryTailorAgent(
+            preferences?.currentLanguageToLearn!
+        );
+        let responseObject = JSON.parse(response.data.body);
+
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          text: responseObject.Text,
+          isUser: false,
+          timestamp: new Date(),
+          audioUrl: "",
+        };
+
+        setMessages((prevMessages) => {
+          // Only add if not already present
+          if (prevMessages.length === 0) {
+            return [botMessage];
+          }
+          return prevMessages;
+        });
+
+        setIsProcessing(false);
+      } else {
+        await cleanHistoryAgent(
+            preferences?.currentLanguageToLearn!,
+            "conversationAgent"
+        );
+
+        setMessages((prevMessages) => {
+          prevMessages = [];
+          return prevMessages;
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+    }
+  };
+
   return (
     <>
       <div ref={chatContainerRef} className="flex-1 overflow-y-auto">
@@ -235,6 +289,7 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       </div>
       <ChatInput
         onSendMessage={handleSendMessage}
+            onCleanHistory={handleCleanHistory}
         isProcessing={isProcessing}
       />
     </>
