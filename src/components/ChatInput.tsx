@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Loader2, MicOff, Trash2, Image, Paperclip, Plus } from 'lucide-react';
+import { Mic, Send, Loader2, MicOff, Image, Paperclip, Plus, Smile } from 'lucide-react';
 import { experimentalSettingsManager } from "../core/ExperimentalSettingsManager.ts";
 import { useTranscriber } from "../core/Transcriber/useTranscriber.ts";
 import { TipsDialog } from './TipsDialog';

@@ -6,8 +6,7 @@ import {cleanHistoryAgent, fetchHistory} from "../api/historyApi.ts"; // Import 
 import {
   invokeConversationAgent,
   invokeRetailerAgent,
-  invokeStoryTailorAgent,
-  invokeWordTeacherAgent,
+  invokeStoryTailorAgent
 } from "../api/agentsApi.ts";
 import { useAppContext } from "../contexts/AppContext.tsx";
 
@@ -75,36 +74,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       }
     };
 
-    const fetchInitialMessageForEmma = async () => {
-      // Prevent duplicate calls
-      if (messages.length > 0) return;
-
-      setIsProcessing(true);
-      try {
-        const response = await invokeWordTeacherAgent(
-          "",
-          preferences?.currentLanguageToLearn!
-        );
-        let responseObject = JSON.parse(response.data.body);
-
-        const botMessage: Message = {
-          id: Date.now().toString(),
-          text: responseObject.Text,
-          isUser: false,
-          timestamp: new Date(),
-          audioUrl: "",
-        };
-
-        setMessages((prevMessages) => {
-          return [...prevMessages, botMessage];
-        });
-      } catch (error) {
-        console.error("Error fetching story:", error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
     const fetchChatHistory = async (agent: any) => {
       // Prevent duplicate calls
       if (messages.length > 0) return;
@@ -141,25 +110,8 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       }
     };
 
-    const fetchData = async () => {
-      // Prevent duplicate calls
-      if (messages.length > 0) return;
-
-      setIsProcessing(true);
-      try {
-        await fetchChatHistory("wordTeacherAgent"); // Wait for this to complete
-        await fetchInitialMessageForEmma(); // Then call this
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
     if (partnerId == "4") {
       fetchStory();
-    } else if (partnerId == "5") {
-      fetchData(); // Call the new async function
     } else {
       fetchChatHistory("conversationAgent");
     }
@@ -182,11 +134,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
         //get-story-feedback
         response = await invokeRetailerAgent(
           messages[0].text,
-          text,
-          preferences?.currentLanguageToLearn!
-        );
-      } else if (partnerId === "5") {
-        response = await invokeWordTeacherAgent(
           text,
           preferences?.currentLanguageToLearn!
         );
@@ -220,7 +167,7 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       if (partnerId === "4") {
         await cleanHistoryAgent(
             preferences?.currentLanguageToLearn!,
-            "wordTeacherAgent"
+            "retailerAgent"
         );
 
         setMessages((prevMessages) => {

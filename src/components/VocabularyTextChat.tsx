@@ -165,6 +165,7 @@ const VocabularyTextChat: React.FC<{
 
       <ChatInput
         onSendMessage={handleSendMessage}
+        onCleanHistory={()=> {}}
         isProcessing={isProcessing}
       />
     </>
