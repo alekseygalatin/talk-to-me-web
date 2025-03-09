@@ -6,10 +6,12 @@ import { SettingsSidebar } from "../components/SettingsSidebar";
 import ChatHeader from "../components/ChatHeader";
 import VoiceChat from "../components/VoiceChat.tsx";
 import TextChat from "../components/TextChat.tsx";
+import VocabularyTextChat from "../components/VocabularyTextChat.tsx";
 
 function Chat() {
   const { partnerId } = useParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarContent, setSidebarContent] = useState<React.ReactNode>(null);
 
   return (
     <div
@@ -26,12 +28,12 @@ function Chat() {
         }}
       >
         <ChatHeader openSidebar={() => setIsSidebarOpen(true)} />
-
-        {partnerId === "6" ? <VoiceChat /> : <TextChat partnerId={partnerId} />}
+        {partnerId === "6" ? <VoiceChat /> : partnerId === "5" ? <VocabularyTextChat setSidebarContent={setSidebarContent} /> : <TextChat partnerId={partnerId} />}
       </div>
       <SettingsSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        content={sidebarContent}
       />
     </div>
   );

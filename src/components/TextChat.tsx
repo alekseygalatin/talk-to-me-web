@@ -10,7 +10,6 @@ import {
   invokeWordTeacherAgent,
 } from "../api/agentsApi.ts";
 import { useAppContext } from "../contexts/AppContext.tsx";
-import { fetchAudioForMessage } from "../api/audioApi";
 
 interface TextChatProps {
   partnerId: string | undefined;
@@ -106,7 +105,7 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       }
     };
 
-    const fetchChatHistory = async (agent) => {
+    const fetchChatHistory = async (agent: any) => {
       // Prevent duplicate calls
       if (messages.length > 0) return;
 
@@ -216,25 +215,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
     }
   };
 
-  const handlePlayAudio = async (message: string): Promise<string> => {
-    try {
-      const response = await fetchAudioForMessage(
-        preferences?.currentLanguageToLearn!,
-        message
-      );
-      const audioBytes = Uint8Array.from(atob(response), (c) =>
-        c.charCodeAt(0)
-      );
-      const audioBlob = new Blob([audioBytes], { type: "audio/wav" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      console.log(audioUrl);
-      return audioUrl;
-    } catch (error) {
-      console.error("Error fetching audio:", error);
-      return "";
-    }
-  };
-
   return (
     <>
       <div ref={chatContainerRef} className="flex-1 overflow-y-auto">
@@ -243,7 +223,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
             <MessageBubble
               key={message.id}
               message={message}
-              onPlayAudio={(text) => handlePlayAudio(text)}
             />
           ))}
           {isProcessing && (
@@ -254,20 +233,10 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
           <div ref={messagesEndRef} />
         </div>
       </div>
-
-      <div
-        className="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
-        style={{
-          paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
-        }}
-      >
-        <div className="px-3 sm:px-4 py-3">
-          <ChatInput
-            onSendMessage={handleSendMessage}
-            isProcessing={isProcessing}
-          />
-        </div>
-      </div>
+      <ChatInput
+        onSendMessage={handleSendMessage}
+        isProcessing={isProcessing}
+      />
     </>
   );
 };

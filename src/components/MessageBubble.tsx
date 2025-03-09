@@ -1,21 +1,21 @@
-import { motion } from 'framer-motion';
-import { Play, Pause } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import type { Message } from '../types';
-import React from 'react';
-import { FaQuestionCircle } from 'react-icons/fa';
-import QuestionPopup from './QuestionPopup'; // Adjust the path as necessary
-import { useAppContext } from '../contexts/AppContext';
-import {invokeConversationHelperAgent} from "../api/agentsApi.ts";
-import WordPopup from './WordPopup.tsx';
+import { motion } from "framer-motion";
+import { Play, Pause } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import type { Message } from "../types";
+import React from "react";
+import { FaQuestionCircle } from "react-icons/fa";
+import QuestionPopup from "./QuestionPopup"; // Adjust the path as necessary
+import { useAppContext } from "../contexts/AppContext";
+import { invokeConversationHelperAgent } from "../api/agentsApi.ts";
+import WordPopup from "./WordPopup.tsx";
+import { fetchAudioForMessage } from "../api/audioApi";
+import ReactMarkdown from "react-markdown";
 
 interface MessageBubbleProps {
   message: Message;
-  onPlayAudio: (text: string) => Promise<string>;
 }
 
-
-export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
+export function MessageBubble({ message }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -31,7 +31,7 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
   const { preferences } = useAppContext();
   const [isAudioLoading, setIsAudioLoading] = useState(false);
-  
+
   const toggleAudio = async () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -39,28 +39,47 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
       } else {
         setIsAudioLoading(true); // Start loading
         try {
-          var url = await onPlayAudio(message.text);
+          var url = await handlePlayAudio(message.text);
           audioRef.current = new Audio(url);
-          audioRef.current.addEventListener('canplaythrough', () => {
-            audioRef.current?.play().catch(error => {
-              console.error('Error playing audio:', error);
+          audioRef.current.addEventListener("canplaythrough", () => {
+            audioRef.current?.play().catch((error) => {
+              console.error("Error playing audio:", error);
             });
           });
 
-          audioRef.current.addEventListener('error', (e) => {
-            console.error('Audio error:', e);
+          audioRef.current.addEventListener("error", (e) => {
+            console.error("Audio error:", e);
           });
 
-          audioRef.current.play().catch(error => {
-            console.error('Error playing audio directly:', error);
+          audioRef.current.play().catch((error) => {
+            console.error("Error playing audio directly:", error);
           });
         } catch (error) {
-          console.error('Error fetching audio URL:', error);
+          console.error("Error fetching audio URL:", error);
         } finally {
           setIsAudioLoading(false); // End loading
         }
       }
       setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handlePlayAudio = async (message: string): Promise<string> => {
+    try {
+      const response = await fetchAudioForMessage(
+        preferences?.currentLanguageToLearn!,
+        message
+      );
+      const audioBytes = Uint8Array.from(atob(response), (c) =>
+        c.charCodeAt(0)
+      );
+      const audioBlob = new Blob([audioBytes], { type: "audio/wav" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log(audioUrl);
+      return audioUrl;
+    } catch (error) {
+      console.error("Error fetching audio:", error);
+      return "";
     }
   };
 
@@ -74,15 +93,15 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
         }
       };
 
-      audio.addEventListener('timeupdate', updateProgress);
-      audio.addEventListener('ended', () => {
+      audio.addEventListener("timeupdate", updateProgress);
+      audio.addEventListener("ended", () => {
         setIsPlaying(false);
         setProgress(0);
       });
 
       return () => {
-        audio.removeEventListener('timeupdate', updateProgress);
-        audio.removeEventListener('ended', () => {
+        audio.removeEventListener("timeupdate", updateProgress);
+        audio.removeEventListener("ended", () => {
           setIsPlaying(false);
           setProgress(0);
         });
@@ -94,41 +113,48 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
     try {
       setIsLoadingQuestion(true);
       setIsQuestionPopupVisible(true);
-      
-      let response = await invokeConversationHelperAgent(message.text, preferences?.currentLanguageToLearn!)
+
+      let response = await invokeConversationHelperAgent(
+        message.text,
+        preferences?.currentLanguageToLearn!
+      );
       let responseObject = JSON.parse(response.data.body);
       const data = JSON.parse(responseObject.Text);
 
       setApiResponse(data);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
     } finally {
       setIsLoadingQuestion(false);
     }
   };
 
   const handleWordClick = (word: string, event: React.MouseEvent) => {
-      event.stopPropagation();
-      const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, '').toLowerCase();
-      
-      if (selectedWord !== cleanWord) {
-          setSelectedWord(cleanWord);
-      } else {
-          setSelectedWord(null); // Close if the same word is clicked
-          setTimeout(() => setSelectedWord(cleanWord), 100);
-      }
+    event.stopPropagation();
+    const cleanWord = word.replace(/[.,!?;:'"()\[\]{}]/g, "").toLowerCase();
+
+    if (selectedWord !== cleanWord) {
+      setSelectedWord(cleanWord);
+    } else {
+      setSelectedWord(null); // Close if the same word is clicked
+      setTimeout(() => setSelectedWord(cleanWord), 100);
+    }
   };
 
   const renderWords = (text: string) => {
-    return text.split(' ').map((word, index, array) => (
+    return text.split(" ").map((word, index, array) => (
       <span key={index}>
         <span
           onClick={(e) => handleWordClick(word, e)}
-          className='cursor-pointer hover:bg-opacity-20 rounded px-0.5 py-0.5 transition-colors duration-200 hover:bg-gray-600 dark:hover:bg-gray-400'
+          className="cursor-pointer hover:bg-opacity-20 rounded px-0.5 py-0.5 transition-colors duration-200 hover:bg-gray-600 dark:hover:bg-gray-400"
         >
-          {word}
+          <ReactMarkdown
+            components={{ p: ({ node, ...props }) => <>{props.children}</> }}
+          >
+            {word}
+          </ReactMarkdown>
         </span>
-        {index < array.length - 1 ? ' ' : ''}
+        {index < array.length - 1 ? " " : ""}
       </span>
     ));
   };
@@ -146,29 +172,31 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
     }
   };
 
-
-
   return (
     <div className="relative">
       <motion.div
         ref={messageRef}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mb-4`}
+        className={`flex ${
+          message.isUser ? "justify-end" : "justify-start"
+        } mb-4`}
         onClick={() => setSelectedWord(null)}
       >
         <div
           className={`flex flex-col space-y-1 max-w-[85vw] sm:max-w-[75%] ${
-            message.isUser ? 'items-end ml-auto' : 'items-start'
+            message.isUser ? "items-end ml-auto" : "items-start"
           }`}
         >
           <div
             className={`relative group px-3 py-2 rounded-2xl break-words ${
               message.isUser
-                ? 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white' : 'bg-white text-gray-800 dark:bg-gray-700 dark:text-white'
-            } ${message.isUser ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
+                ? "bg-blue-500 text-white dark:bg-blue-600 dark:text-white"
+                : "bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
+            } ${message.isUser ? "rounded-br-sm" : "rounded-bl-sm"}`}
           >
             {renderWords(message.text)}
+
             {!message.isUser && (
               <button
                 onClick={handleQuestionClick}
@@ -210,9 +238,9 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
                   {isAudioLoading ? (
                     <div className="animate-spin h-4 w-4 border-2 border-t-transparent border-gray-600 rounded-full"></div>
                   ) : isPlaying ? (
-                    <Pause className="w-4 h-4"/>
+                    <Pause className="w-4 h-4" />
                   ) : (
-                    <Play className="w-4 h-4"/>
+                    <Play className="w-4 h-4" />
                   )}
                 </button>
                 <audio
@@ -227,8 +255,8 @@ export function MessageBubble({ message, onPlayAudio }: MessageBubbleProps) {
                 >
                   <motion.div
                     className="h-full bg-black/20 rounded-full"
-                    style={{width: `${progress}%`}}
-                    transition={{type: "tween"}}
+                    style={{ width: `${progress}%` }}
+                    transition={{ type: "tween" }}
                   />
                 </div>
               </div>
