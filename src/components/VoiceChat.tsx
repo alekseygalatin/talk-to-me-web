@@ -65,6 +65,7 @@ const VoiceChat: React.FC = () => {
             }
             default: {
                 setStatusIndicator("Click start to begin conversation");
+                setIsConversationStarted(false)
                 break;
             }
         }

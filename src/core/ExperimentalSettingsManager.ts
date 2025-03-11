@@ -17,7 +17,7 @@ export class ExperimentalSettingsManager {
                 isDevelopment: useLocalWebSocket,
                 Url: useLocalWebSocket
                     ? 'ws://127.0.0.1:8080'
-                    : 'wss://egy8ib44s2.execute-api.us-east-1.amazonaws.com/production'
+                    : 'wss://r2cf63ld99.execute-api.us-east-1.amazonaws.com/Prod'
             },
             Api: {
                 isDevelopment: isDevelopment,
