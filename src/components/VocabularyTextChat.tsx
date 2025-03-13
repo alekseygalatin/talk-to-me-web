@@ -60,7 +60,7 @@ const VocabularyTextChat: React.FC<{
 
   const handleBeforeCloseChat = async () => {
     try {
-      await endVocabularySession(languageInfo);
+      await endVocabularySession(languageInfo.languageCode);
     } catch (error) {
       console.error("Error ending vocabulary session:", error);
     }

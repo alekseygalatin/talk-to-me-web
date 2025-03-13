@@ -1,4 +1,3 @@
-import { IncludeIntoChat } from "../models/IncludeIntoChat";
 import { Word } from "../models/Word";
 import apiClient from "./apiClient";
 
@@ -18,8 +17,8 @@ export const deleteWord = async (langauge: string, word: string) => {
     return response;
 }
 
-export const setIncludeIntoChat = async (includeIntoChat: IncludeIntoChat) => {
-    const response = await apiClient.put("/words/include-into-chat", includeIntoChat);
+export const setIncludeIntoChat = async (langaugeCode: string, word: string, include: boolean) => {
+    const response = await apiClient.put(`/words/${langaugeCode}/chat/${word}?include=${include}`);
     return response;
 }
   

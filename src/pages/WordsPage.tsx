@@ -8,8 +8,6 @@ import { useAppContext } from '../contexts/AppContext.tsx';
 import WordPopup from '../components/WordPopup.tsx';
 import Spinner from '../components/Spinner.tsx';
 import { useNavigate } from 'react-router-dom';
-import { IncludeIntoChat } from '../models/IncludeIntoChat.ts';
-
 
 const WordsPage: React.FC = () => {
   const [isLoadingWords, setIsWordsLoading] = useState(true);
@@ -79,8 +77,7 @@ const WordsPage: React.FC = () => {
   const handleIncludeIntoChat= async (index: number, word: Word) => {
     setIsIncluding(true);
     try {
-      const includeIntoChat: IncludeIntoChat = { languageCode: word.language, word: word.word, includeIntoChat: !word.includeIntoChat };
-      await setIncludeIntoChat(includeIntoChat);
+      await setIncludeIntoChat(word.language, word.word, !word.includeIntoChat);
       const updatedWords = [...words];
       updatedWords[index].includeIntoChat = !updatedWords[index].includeIntoChat;
       setWords(updatedWords);

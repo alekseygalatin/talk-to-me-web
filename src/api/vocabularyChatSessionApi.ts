@@ -2,16 +2,11 @@ import { LanguageInfo } from "../models/LanguageInfo";
 import apiClient from "./apiClient";
 
 export const startVocabularySession = async (language: LanguageInfo) : Promise<string[]> => {
-    const response = await apiClient.post(`/vocabularyChatSessions/start`, language);
+    const response = await apiClient.post(`/vocabularyChatSessions`, language);
     return response.data;
 }
 
-export const getVocabularySessionWords = async (language:string): Promise<string[]> => {
-    const response = await apiClient.get(`/vocabularyChatSessions/${language}`);
-    return response.data;
-}
-
-export const endVocabularySession = async (language: LanguageInfo) => {
-    const response = await apiClient.post(`/vocabularyChatSessions/end`, language);
+export const endVocabularySession = async (languageCode: string) => {
+    const response = await apiClient.delete(`/vocabularyChatSessions/${languageCode}`);
     return response;
 }
