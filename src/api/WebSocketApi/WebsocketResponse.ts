@@ -38,6 +38,9 @@ export interface SocketAiAgentResponse {
 export interface SocketPollyResponse {
     audioChunk: string;
     chunked: boolean;
+    is_final: boolean;
+    chunkIndex: number;
+    totalChunks: number;
 }
 
 export interface SocketExceptionResponse {

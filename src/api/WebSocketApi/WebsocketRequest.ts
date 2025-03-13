@@ -35,12 +35,12 @@ export class SocketRequest<
     ) {
     }
 
-    public serialize(connectionId: string, isDevelopment: boolean): string {
+    public serialize(sessionId: string, isDevelopment: boolean): string {
         if (isDevelopment) {
-            const serializedBodyMessage = this.serializeSocketMessage();
+            const serializedBodyMessage = this.serializeSocketMessage(sessionId);
             const request = {
                 requestContext: {
-                    connectionId: connectionId,
+                    connectionId: sessionId,
                     domainName: "someName",
                     stage: "localdev",
                     routeKey: "$default"
@@ -50,11 +50,11 @@ export class SocketRequest<
             return JSON.stringify(request);
         }
 
-        return this.serializeSocketMessage();
+        return this.serializeSocketMessage(sessionId);
     }
 
-    private serializeSocketMessage(): string {
-        const flattenedMetadata = {route: this.route, ...this.request};
+    private serializeSocketMessage(sessionId: string): string {
+        const flattenedMetadata = {sessionId: sessionId, payload: {route: this.route, ...this.request}};
 
         return JSON.stringify(flattenedMetadata);
     }

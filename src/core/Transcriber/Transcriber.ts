@@ -24,7 +24,8 @@ export interface TranscriptResult {
 
 export interface TranscriberStartParams {
     language: string;
-    continuous?: boolean;
+    continuous?: boolean,
+    stopBySilence: boolean,
 
     [key: string]: any;
 }

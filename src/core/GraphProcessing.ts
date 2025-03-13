@@ -15,6 +15,8 @@ import {Auth} from "aws-amplify";
 import {TranscriberStartParams, TranscriptResult} from "./Transcriber/Transcriber.ts";
 import {AudioMetadata, SocketRequestBuilder} from "../api/WebSocketApi/WebsocketRequest.ts";
 
+const TARGET_SIZE: number = 50_000;
+
 const experimentalSettings = experimentalSettingsManager.getSettings();
 
 type GraphType = "Transcribe" | "TranscribeWithBedrockAndPolly";
@@ -27,18 +29,25 @@ export interface GraphProcessingParams {
 }
 
 export const useGraphProcessing = () => {
-    const [connectionId, setConnectionId] = useState('');
     const {webSocketMessage, sendWebSocketMessage} = useWebSocket();
 
     const graphCreatedResponseRef = useRef<SocketGraphCreated | null>(null);
     const authResponseRef = useRef<SocketAuthResponse | null>(null);
     const transcriptCompletedResponseRef = useRef<SocketTranscriptCompletedResponse | null>(null);
+
+    //outgoing audio chunks
+    const audioAccumulator = useRef<Float32Array[]>([]);
+    const accumulatedSize = useRef<number>(0);
+
+    //incomming audio chunks
+    const audioChunks = useRef<Map<number, Uint8Array>>(new Map());
     const audioDataRef = useRef<Blob | null>(null);
 
     const [aiAgentResponse, setAiAgentResponse] = useState<SocketTranscriptCompletedResponse | null>(null);
 
 
     const stopProcessingRequestedRef = useRef<boolean>(false);
+    const sessionIdRef = useRef<string>("");
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [graphProcessingStatus, setGraphProcessingStatus] = useState<GraphProcessingStatus>("Idling");
@@ -54,11 +63,6 @@ export const useGraphProcessing = () => {
     useEffect(() => {
         audioDataRef.current = audioData;
     }, [audioData]);
-
-    useEffect(() => {
-        const newId = crypto.randomUUID();
-        setConnectionId(newId);
-    }, []);
 
     // Handle incoming WebSocket messages
     useEffect(() => {
@@ -100,7 +104,6 @@ export const useGraphProcessing = () => {
 
         if (deserialized.route === RouteResponseType.TranscriptCompleted) {
             transcriptCompletedResponseRef.current = deserialized.result as SocketTranscriptCompletedResponse;
-            console.log("Transcript completed message received");
 
             return;
         }
@@ -112,11 +115,42 @@ export const useGraphProcessing = () => {
         }
 
         if (deserialized.route === RouteResponseType.PollyResult) {
-            const audioData = (deserialized.result as SocketPollyResponse).audioChunk;
-            // const audioData = deserialized.result.audioChunk;
-            const audioBytes = Uint8Array.from(atob(audioData), (c) =>
+            const pollyResult = deserialized.result as SocketPollyResponse;
+            let audioBytes = Uint8Array.from(atob(pollyResult.audioChunk), (c) =>
                 c.charCodeAt(0)
             );
+
+            if(pollyResult.chunked) {
+                audioChunks.current.set(pollyResult.chunkIndex, audioBytes);
+
+                if(pollyResult.chunkIndex == pollyResult.totalChunks - 1) {
+                    let totalLength = 0;
+                    for (let i = 0; i < pollyResult.totalChunks; i++) {
+                        const chunk = audioChunks.current.get(i);
+                        if (!chunk) {
+                            console.warn(`Missing audio chunk ${i}, but continuing with what we have`);
+                            continue;
+                        }
+                        totalLength += chunk.length;
+                    }
+
+                    audioBytes = new Uint8Array(totalLength);
+                    let offset = 0;
+                    
+                    for (let i = 0; i < pollyResult.totalChunks; i++) {
+                        const chunk = audioChunks.current.get(i);
+                        if (!chunk) continue; // Skip missing chunks
+                        
+                        audioBytes.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+                } else {
+                    return;
+                }
+
+                audioChunks.current.clear();
+            }
+
             const audioBlob = new Blob([audioBytes], {type: "audio/wav"});
             setAudioData(audioBlob);
             return;
@@ -145,6 +179,7 @@ export const useGraphProcessing = () => {
         while (!isStopped()) {
             await startProcessingInternal(parameters);
             await stopProcessingInternal();
+            clearState();
 
             // TODO - find a better way, but now it is fast and difficult to start speaking in a second interval
             setTimeout(() => {
@@ -154,6 +189,8 @@ export const useGraphProcessing = () => {
 
     const startProcessingInternal = async (parameters: GraphProcessingParams) => {
         try {
+            const newId = crypto.randomUUID();
+            sessionIdRef.current = newId;
 
             setIsProcessing(true);
 
@@ -163,7 +200,7 @@ export const useGraphProcessing = () => {
             const token = (await Auth.currentSession()).getAccessToken()?.getJwtToken();
             const createGraphRequest = SocketRequestBuilder
                 .createGraph(parameters.GraphType, token, parameters.TranscriberStartParams.language)
-                .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+                .serialize(sessionIdRef.current, experimentalSettings.WebSocket.isDevelopment);
             sendWebSocketMessage(createGraphRequest);
 
             await waitForResult(graphCreatedResponseRef);
@@ -210,7 +247,6 @@ export const useGraphProcessing = () => {
 
     const tryStartTranscript = async (params: TranscriberStartParams): Promise<boolean> => {
         try {
-            console.log("Try Starting audio transcription");
             if (!params.language) {
                 console.error('Language is required');
 
@@ -225,10 +261,13 @@ export const useGraphProcessing = () => {
             scriptProcessor.connect(audioContext.destination);
 
             let lastAudioDataReceivedTime = Date.now();
-            let stoppedBySilence = false;
+            let transcriptProcessingStopped = false;
             scriptProcessor.onaudioprocess = (event: AudioProcessingEvent) => {
-                if (stoppedBySilence || isStopped()) {
+                if (transcriptProcessingStopped) {
                     return;
+                }
+                if (isStopped()) {
+                    transcriptProcessingStopped = true;
                 }
 
                 const audioBuffer = event.inputBuffer.getChannelData(0);
@@ -238,29 +277,30 @@ export const useGraphProcessing = () => {
                 };
 
                 const isSilence = detectSilence(audioBuffer);
-                if (isSilence) {
+                if (isSilence && params.stopBySilence) {
                     if (Date.now() - lastAudioDataReceivedTime > 3_500) {
                         console.log("Silence detected, stopping transcription");
-                        stoppedBySilence = true;
-                        stopTranscribingInternal(false);
-
-                        return;
+                        transcriptProcessingStopped = true;
                     }
                 } else {
                     lastAudioDataReceivedTime = Date.now();
                 }
 
-                const audioChunk = encodePCMChunk(audioBuffer);
-                const request = SocketRequestBuilder
-                    .transcribe(audioChunk, audioMetadata)
-                    .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
-                sendWebSocketMessage(request);
+                // Add the current buffer to the accumulator
+                audioAccumulator.current.push(new Float32Array(audioBuffer));
+                accumulatedSize.current += audioBuffer.length * 4; // 4 bytes per float32
+                if (accumulatedSize.current >= TARGET_SIZE || transcriptProcessingStopped) {
+                    sendAccumulatedAudio(audioMetadata);
+                }
+
+                if (transcriptProcessingStopped) {
+                    stopTranscribingInternal(false);
+                }
             };
 
             audioContextRef.current = audioContext;
             mediaStreamRef.current = mediaStream;
             scriptProcessorRef.current = scriptProcessor;
-            console.log("Transcription - started");
 
             return true;
         } catch (error) {
@@ -269,6 +309,42 @@ export const useGraphProcessing = () => {
             return false;
         }
     };
+    
+    // Add this method to your class
+    const sendAccumulatedAudio = (audioMetadata: AudioMetadata): void => {
+        if (audioAccumulator.current.length === 0) return;
+        
+        // Make a copy of the current accumulator and reset it immediately
+        // This prevents race conditions with new incoming audio
+        const buffersToSend = [...audioAccumulator.current];
+        audioAccumulator.current = [];
+        accumulatedSize.current = 0;
+        
+        // Calculate total length
+        let totalLength = 0;
+        for (const buffer of buffersToSend) {
+            totalLength += buffer.length;
+        }
+        
+        // Combine all accumulated buffers
+        const combinedBuffer = new Float32Array(totalLength);
+        let offset = 0;
+        
+        for (const buffer of buffersToSend) {
+            combinedBuffer.set(buffer, offset);
+            offset += buffer.length;
+        }
+        
+        // Encode and send the combined chunk
+        const audioChunk = encodePCMChunk(combinedBuffer);
+        // console.log(`Sending accumulated audio chunk: ${(audioChunk.length * 0.75 / 1024).toFixed(2)}KB`);
+        
+        const request = SocketRequestBuilder
+            .transcribe(audioChunk, audioMetadata)
+            .serialize(sessionIdRef.current, experimentalSettings.WebSocket.isDevelopment);
+        
+        sendWebSocketMessage(request);
+    }
 
     const playAudio = (audioBlob: Blob | null): Promise<void> => {
         return new Promise((resolve, reject) => {
@@ -312,11 +388,10 @@ export const useGraphProcessing = () => {
         await stopTranscribingInternal(false);
         const createGraphRequest = SocketRequestBuilder
             .stopGraph()
-            .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+            .serialize(sessionIdRef.current, experimentalSettings.WebSocket.isDevelopment);
         sendWebSocketMessage(createGraphRequest);
 
         setIsProcessing(false);
-        clearState();
         setGraphProcessingStatus("Idling");
     }
 
@@ -347,8 +422,9 @@ export const useGraphProcessing = () => {
         if (!stopByException) {
             const createGraphRequest = SocketRequestBuilder
                 .stopTranscript()
-                .serialize(connectionId, experimentalSettings.WebSocket.isDevelopment);
+                .serialize(sessionIdRef.current, experimentalSettings.WebSocket.isDevelopment);
             sendWebSocketMessage(createGraphRequest);
+            await waitForResult(transcriptCompletedResponseRef, 5);
         }
     };
 
@@ -363,6 +439,7 @@ export const useGraphProcessing = () => {
         }
     };
 
+    // May need to add logic stop waiting if exception received
     const waitForResult = async <T>(
         ref: React.MutableRefObject<T | null>,
         timeoutSeconds: number = 5
@@ -407,5 +484,5 @@ const encodePCMChunk = (input: Float32Array): Uint8Array => {
 
 const detectSilence = (chunk: Float32Array): boolean => {
     const rms = Math.sqrt(chunk.reduce((sum, sample) => sum + sample * sample, 0) / chunk.length);
-    return rms < 0.01; // Silence threshold
+    return rms < 0.01; // Silence
 }

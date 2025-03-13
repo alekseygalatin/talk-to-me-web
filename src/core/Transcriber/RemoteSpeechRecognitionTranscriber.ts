@@ -6,7 +6,8 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
         startProcessing,
         stopProcessing,
         transcript,
-        isProcessing
+        isProcessing,
+        clearState
     } = useGraphProcessing();
 
 
@@ -16,7 +17,8 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
                 GraphType: "Transcribe",
                 TranscriberStartParams: {
                     continuous: true,
-                    language: params?.currentLanguageToLearn ?? 'en-US',
+                    language: params?.language ?? 'en-US',
+                    stopBySilence: false
                 },
                 Circular: false
             });
@@ -30,7 +32,7 @@ export const useRemoteSpeechRecognitionTranscriber = (): Transcriber => {
     };
 
     const clearTranscript = (): void => {
-        //resetTranscript();
+        clearState();
     };
 
     return {

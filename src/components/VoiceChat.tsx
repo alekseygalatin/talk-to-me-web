@@ -79,8 +79,9 @@ const VoiceChat: React.FC = () => {
             TranscriberStartParams: {
                 continuous: true,
                 language: preferences?.currentLanguageToLearn ?? "sv-SE",
+                stopBySilence: true,
             },
-            Circular: true
+            Circular: true,
         });
 
         console.log("Starting live conversation...");
