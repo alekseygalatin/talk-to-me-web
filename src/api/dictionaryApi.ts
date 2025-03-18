@@ -17,8 +17,8 @@ export const deleteWord = async (langauge: string, word: string) => {
     return response;
 }
 
-export const setIncludeIntoChat = async (langauge: string, word: string, includeIntoChat: boolean) => {
-    const response = await apiClient.put(`/words/${langauge}/${word}/${includeIntoChat}`,);
+export const setIncludeIntoChat = async (langaugeCode: string, word: string, include: boolean) => {
+    const response = await apiClient.put(`/words/${langaugeCode}/chat/${word}?include=${include}`);
     return response;
 }
   

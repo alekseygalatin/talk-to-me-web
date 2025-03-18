@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Loader2, MicOff, Trash2, Image, Paperclip, Plus } from 'lucide-react';
+import { Mic, Send, Loader2, MicOff, Plus, Trash2 } from 'lucide-react';
 import { experimentalSettingsManager } from "../core/ExperimentalSettingsManager.ts";
 import { useTranscriber } from "../core/Transcriber/useTranscriber.ts";
 import { TipsDialog } from './TipsDialog';
@@ -101,8 +101,14 @@ export function ChatInput({ onSendMessage, isProcessing, onCleanHistory }: ChatI
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
+    <div
+        className="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+        style={{
+          paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
+        }}
+      >
+        <div className="px-3 sm:px-4 py-3">
+        <form onSubmit={handleSubmit}>
         <div className="flex flex-col w-full rounded-2xl border border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 
               dark:text-white dark:placeholder-gray-400 p-2">
           <textarea
@@ -185,7 +191,8 @@ export function ChatInput({ onSendMessage, isProcessing, onCleanHistory }: ChatI
           </div>
         </div>
       </form>
-      <TipsDialog isOpen={isTipsOpen} onClose={() => setIsTipsOpen(false)} />
-    </>
+          <TipsDialog isOpen={isTipsOpen} onClose={() => setIsTipsOpen(false)} />
+        </div>
+    </div>
   );
 }

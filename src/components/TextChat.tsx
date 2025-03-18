@@ -6,11 +6,9 @@ import {cleanHistoryAgent, fetchHistory} from "../api/historyApi.ts"; // Import 
 import {
   invokeConversationAgent,
   invokeRetailerAgent,
-  invokeStoryTailorAgent,
-  invokeWordTeacherAgent,
+  invokeStoryTailorAgent
 } from "../api/agentsApi.ts";
 import { useAppContext } from "../contexts/AppContext.tsx";
-import { fetchAudioForMessage } from "../api/audioApi";
 
 interface TextChatProps {
   partnerId: string | undefined;
@@ -76,37 +74,7 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       }
     };
 
-    const fetchInitialMessageForEmma = async () => {
-      // Prevent duplicate calls
-      if (messages.length > 0) return;
-
-      setIsProcessing(true);
-      try {
-        const response = await invokeWordTeacherAgent(
-          "",
-          preferences?.currentLanguageToLearn!
-        );
-        let responseObject = JSON.parse(response.data.body);
-
-        const botMessage: Message = {
-          id: Date.now().toString(),
-          text: responseObject.Text,
-          isUser: false,
-          timestamp: new Date(),
-          audioUrl: "",
-        };
-
-        setMessages((prevMessages) => {
-          return [...prevMessages, botMessage];
-        });
-      } catch (error) {
-        console.error("Error fetching story:", error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    const fetchChatHistory = async (agent) => {
+    const fetchChatHistory = async (agent: any) => {
       // Prevent duplicate calls
       if (messages.length > 0) return;
 
@@ -142,25 +110,8 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       }
     };
 
-    const fetchData = async () => {
-      // Prevent duplicate calls
-      if (messages.length > 0) return;
-
-      setIsProcessing(true);
-      try {
-        await fetchChatHistory("wordTeacherAgent"); // Wait for this to complete
-        await fetchInitialMessageForEmma(); // Then call this
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
     if (partnerId == "4") {
       fetchStory();
-    } else if (partnerId == "5") {
-      fetchData(); // Call the new async function
     } else {
       fetchChatHistory("conversationAgent");
     }
@@ -183,11 +134,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
         //get-story-feedback
         response = await invokeRetailerAgent(
           messages[0].text,
-          text,
-          preferences?.currentLanguageToLearn!
-        );
-      } else if (partnerId === "5") {
-        response = await invokeWordTeacherAgent(
           text,
           preferences?.currentLanguageToLearn!
         );
@@ -221,7 +167,7 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
       if (partnerId === "4") {
         await cleanHistoryAgent(
             preferences?.currentLanguageToLearn!,
-            "wordTeacherAgent"
+            "retailerAgent"
         );
 
         setMessages((prevMessages) => {
@@ -270,25 +216,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
     }
   };
 
-  const handlePlayAudio = async (message: string): Promise<string> => {
-    try {
-      const response = await fetchAudioForMessage(
-        preferences?.currentLanguageToLearn!,
-        message
-      );
-      const audioBytes = Uint8Array.from(atob(response), (c) =>
-        c.charCodeAt(0)
-      );
-      const audioBlob = new Blob([audioBytes], { type: "audio/wav" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      console.log(audioUrl);
-      return audioUrl;
-    } catch (error) {
-      console.error("Error fetching audio:", error);
-      return "";
-    }
-  };
-
   return (
     <>
       <div ref={chatContainerRef} className="flex-1 overflow-y-auto">
@@ -297,7 +224,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
             <MessageBubble
               key={message.id}
               message={message}
-              onPlayAudio={(text) => handlePlayAudio(text)}
             />
           ))}
           {isProcessing && (
@@ -308,21 +234,11 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
           <div ref={messagesEndRef} />
         </div>
       </div>
-
-      <div
-        className="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
-        style={{
-          paddingBottom: `calc(env(safe-area-inset-bottom) + 0.75rem)`,
-        }}
-      >
-        <div className="px-3 sm:px-4 py-3">
-          <ChatInput
-            onSendMessage={handleSendMessage}
+      <ChatInput
+        onSendMessage={handleSendMessage}
             onCleanHistory={handleCleanHistory}
-            isProcessing={isProcessing}
-          />
-        </div>
-      </div>
+        isProcessing={isProcessing}
+      />
     </>
   );
 };
