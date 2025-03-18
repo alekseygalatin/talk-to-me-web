@@ -6,6 +6,11 @@ export const startVocabularySession = async (language: LanguageInfo) : Promise<s
     return response.data;
 }
 
+export const getSessionWords = async (languageCode: string) : Promise<string[]> => {
+    const response = await apiClient.get(`/vocabularyChatSessions/${languageCode}/words`);
+    return response.data;
+}
+
 export const endVocabularySession = async (languageCode: string) => {
     const response = await apiClient.delete(`/vocabularyChatSessions/${languageCode}`);
     return response;

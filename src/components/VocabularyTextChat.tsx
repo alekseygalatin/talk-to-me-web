@@ -7,6 +7,7 @@ import { useAppContext } from "../contexts/AppContext.tsx";
 import { v4 as uuidv4 } from "uuid";
 import {
   endVocabularySession,
+  getSessionWords,
   startVocabularySession,
 } from "../api/vocabularyChatSessionApi.ts";
 import { LanguageInfo } from "../models/LanguageInfo.ts";
@@ -35,6 +36,9 @@ const VocabularyTextChat: React.FC<{
   const languageInfo: LanguageInfo = {
     languageCode: preferences?.currentLanguageToLearn!,
   };
+  const [learningWords, setLearningWords] = useState<string[]>([]);
+  const [isResetting, setIsResetting] = useState(false);
+
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,15 +48,69 @@ const VocabularyTextChat: React.FC<{
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  const startSession = async () => {
-    try {
-      const words = await startVocabularySession(languageInfo);
+  useEffect(() => {
+    const initializeChat = async () => {
+      if (!preferences?.currentLanguageToLearn) return;
+
+      try {
+        await startSession();
+        await getIntroductionMessage();
+        if (learningWords.length == 0) {
+          setLearningWords(await getSessionWords(languageInfo.languageCode));
+        }
+
+      } catch (error) {
+        console.error("Error initializing chat:", error);
+      }
+    };
+
+    initializeChat();
+    window.addEventListener("beforeclosechat", handleBeforeCloseChat);
+
+    return () => {
+      handleBeforeCloseChat();
+      window.removeEventListener("beforeclosechat", handleBeforeCloseChat);
+    };
+  }, [preferences?.currentLanguageToLearn]);
+
+  useEffect(() => {
+    if (learningWords.length > 0) {
       setSidebarContent(
         <VocabularyChatSidebarContent
-          learningWords={words}
+          learningWords={learningWords}
           restartSession={restartSession}
         />
       );
+    }
+    
+  }, [JSON.stringify(learningWords)]);
+
+  useEffect(() => {
+    if (isResetting) {
+        setIsResetting(false);
+        startSession().then(getIntroductionMessage).then(() => {
+          if (learningWords.length == 0) {
+            getSessionWords(languageInfo.languageCode).then((words) => {
+              setLearningWords(words);
+            });
+          }
+        });
+    }
+  }, [isResetting]);
+
+  const restartSession = async () => {
+    setMessages([]);
+    setLearningWords([]);
+    await handleBeforeCloseChat();
+    setIsResetting(true);
+
+    await new Promise((resolve) => setTimeout(resolve, 0)); 
+  };
+
+  const startSession = async () => {
+    try {
+      const words = await startVocabularySession(languageInfo);
+      setLearningWords(words);
     } catch (error) {
       console.error("Error starting vocabulary session:", error);
     }
@@ -66,12 +124,7 @@ const VocabularyTextChat: React.FC<{
     }
   };
 
-  const restartSession = async () => {
-    setMessages([]);
-    await handleBeforeCloseChat();
-    await startSession();
-    await getIntroductionMessage();
-  };
+  
 
   const getIntroductionMessage = async () => {
     setIsProcessing(true);
@@ -125,27 +178,6 @@ const VocabularyTextChat: React.FC<{
       setIsProcessing(false);
     }
   };
-
-  useEffect(() => {
-    const initializeChat = async () => {
-      if (!preferences?.currentLanguageToLearn) return;
-
-      try {
-        await startSession();
-        await getIntroductionMessage();
-      } catch (error) {
-        console.error("Error initializing chat:", error);
-      }
-    };
-
-    initializeChat();
-    window.addEventListener("beforeclosechat", handleBeforeCloseChat);
-
-    return () => {
-      handleBeforeCloseChat();
-      window.removeEventListener("beforeclosechat", handleBeforeCloseChat);
-    };
-  }, [preferences?.currentLanguageToLearn]);
 
   return (
     <>
