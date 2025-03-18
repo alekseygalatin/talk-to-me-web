@@ -88,6 +88,7 @@ export function ChatInput({ onSendMessage, isProcessing, onCleanHistory }: ChatI
       await transcriber.startTranscript({
         continuous: true,
         language: preferences?.currentLanguageToLearn ?? "sv-SE",
+        stopBySilence: false,
       });
     }
   };

@@ -12,6 +12,7 @@ export interface Transcriber {
     clearTranscript(): void;
 
     transcript: TranscriptResult | null;
+
     isRecording: boolean;
 }
 
@@ -23,7 +24,8 @@ export interface TranscriptResult {
 
 export interface TranscriberStartParams {
     language: string;
-    continuous?: boolean;
+    continuous?: boolean,
+    stopBySilence: boolean,
 
     [key: string]: any;
 }
