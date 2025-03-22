@@ -41,38 +41,6 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
   };
 
   useEffect(() => {
-    const fetchStory = async () => {
-      // Prevent duplicate calls
-      if (messages.length > 0) return;
-
-      setIsProcessing(true);
-      try {
-        const response = await invokeStoryTailorAgent(
-          preferences?.currentLanguageToLearn!
-        );
-        let responseObject = JSON.parse(response.data.body);
-
-        const botMessage: Message = {
-          id: Date.now().toString(),
-          text: responseObject.Text,
-          isUser: false,
-          timestamp: new Date(),
-          audioUrl: "",
-        };
-
-        setMessages((prevMessages) => {
-          // Only add if not already present
-          if (prevMessages.length === 0) {
-            return [botMessage];
-          }
-          return prevMessages;
-        });
-      } catch (error) {
-        console.error("Error fetching story:", error);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
 
     const fetchChatHistory = async (agent: any) => {
       // Prevent duplicate calls
@@ -111,7 +79,7 @@ const TextChat: React.FC<TextChatProps> = ({ partnerId }: TextChatProps) => {
     };
 
     if (partnerId == "4") {
-      fetchStory();
+      fetchChatHistory("retailerAgent");
     } else {
       fetchChatHistory("conversationAgent");
     }
