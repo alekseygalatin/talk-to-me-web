@@ -22,6 +22,12 @@ const Header: React.FC = () => {
     useAppContext();
   const { theme, toggleTheme } = useAppContext();
 
+  const handleLogout = async () => {
+    await Auth.signOut();
+    clearData();
+    navigate("/login");
+  }
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,11 +113,7 @@ const Header: React.FC = () => {
 
                   <MenuItem>
                     <button
-                      onClick={() => {
-                        Auth.signOut();
-                        clearData();
-                        navigate("/login");
-                      }}
+                      onClick={ handleLogout }
                       className="flex items-center gap-2 w-full px-6 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       <LogOut className="w-5 h-5" />
@@ -236,11 +238,7 @@ const Header: React.FC = () => {
                       )}
                       <MenuItem>
                         <button
-                          onClick={() => {
-                            Auth.signOut();
-                            clearData();
-                            navigate("/login");
-                          }}
+                          onClick={ handleLogout }
                           className="flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300"
                         >
                           <LogOut className="w-5 h-5" />

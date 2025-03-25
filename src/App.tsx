@@ -13,6 +13,7 @@ import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { Amplify } from 'aws-amplify';
 import { experimentalSettingsManager } from "./core/ExperimentalSettingsManager.ts";
+import { AuthProvider } from './contexts/AuthProvider.tsx';
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 
@@ -39,40 +40,41 @@ function App() {
         {/* Public routes */}
         <Route element={<SimpleLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
         </Route>
-
-        {/* Protected routes with AppProvider */}
-        <Route
-          path="/*"
-          element={
-            <AppProvider>
-              <Routes>
-                {/* Login page inside AppProvider */}
-                <Route path="/login" element={<Login />} />
-
-                {/* App initialization and other pages */}
-                <Route
-                  path="/*"
-                  element={
-                    <AppInitializer>
-                      <Routes>
-                        <Route element={<AppLayout />}>
-                          <Route path="/user-preferences" element={<UserPreferences />} />
-                          <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
-                          <Route path="/select-partner" element={<SelectPartner />} />
-                          <Route path="/words" element={<WordsPage />} />
-                        </Route>
-                        <Route element={<SimpleLayout />}>
-                        </Route>
-                        <Route path="/chat/:partnerId" element={<ChatSettingsProvider><Chat /></ChatSettingsProvider>} />
-                      </Routes>
-                    </AppInitializer>
-                  }
-                />
-              </Routes>
-            </AppProvider>
-          }
-        />
+       
+        <Route path="/*" element={
+          <AuthProvider>
+            <Routes>
+              {/* Protected by Auth provider */}
+              <Route path="/*" element={
+                  <AppProvider>
+                    <Routes>
+                      {/* Protected by App provider */}
+                      <Route path="/*" element={
+                          <AppInitializer>
+                            <Routes>
+                              <Route element={<AppLayout />}>
+                                <Route path="/user-preferences" element={<UserPreferences />} />
+                                <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
+                                <Route path="/select-partner" element={<SelectPartner />} />
+                                <Route path="/words" element={<WordsPage />} />
+                              </Route>
+                              <Route element={<SimpleLayout />}>
+                              </Route>
+                              <Route path="/chat/:partnerId" element={<ChatSettingsProvider><Chat /></ChatSettingsProvider>} />
+                            </Routes>
+                          </AppInitializer>
+                        }
+                      />
+                    </Routes>
+                  </AppProvider>
+                }
+              />
+            </Routes>
+            </AuthProvider>
+        }/>
+        
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
