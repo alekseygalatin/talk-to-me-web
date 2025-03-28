@@ -12,12 +12,18 @@ const UserPreferencesForm: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { preferences, setPreferences } = useAppContext();
 
-  const [fromPreferences, setFormPreference] = useState<UserPreference>(preferences ? preferences : {
+  const [fromPreferences, setFormPreference] = useState<UserPreference>({
     name: "",
     nativeLanguage: "en-US",
     preferedPronoun: "He/Him",
     currentLanguageToLearn: ""
   });
+
+  useEffect(() => {
+    if (preferences) {
+      setFormPreference(preferences)
+    }
+  }, [preferences]);
 
   const isEditing = !!preferences;
   const navigate = useNavigate();
