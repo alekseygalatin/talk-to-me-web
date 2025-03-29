@@ -118,7 +118,7 @@ export function ChatInput({ onSendMessage, isProcessing, onCleanHistory }: ChatI
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={transcriber.isRecording ? 'Listening...' : 'Type a message...'}
-            className="flex-1 border-0 bg-white text-gray-900 dark:bg-gray-800 px-1
+            className="border-0 bg-white text-gray-900 dark:bg-gray-800 px-1
                 dark:text-white dark:placeholder-gray-400 resize-none focus:outline-none"
             style={{ maxHeight: '120px', overflow: 'auto' }}
             disabled={isProcessing || transcriber.isRecording}
