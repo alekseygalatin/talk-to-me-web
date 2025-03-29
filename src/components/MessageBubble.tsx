@@ -10,6 +10,7 @@ import { invokeConversationHelperAgent } from "../api/agentsApi.ts";
 import WordPopup from "./WordPopup.tsx";
 import { fetchAudioForMessage } from "../api/audioApi";
 import ReactMarkdown from "react-markdown";
+import { useChatSettings } from "../contexts/ChatSettingsContext";
 
 interface MessageBubbleProps {
   message: Message;
@@ -18,6 +19,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const messageRef = useRef<HTMLDivElement>(null);
+  const { chatSettings } = useChatSettings();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -41,6 +43,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         try {
           var url = await handlePlayAudio(message.text);
           audioRef.current = new Audio(url);
+          audioRef.current.volume = chatSettings.volume / 100;
           audioRef.current.addEventListener("canplaythrough", () => {
             audioRef.current?.play().catch((error) => {
               console.error("Error playing audio:", error);
@@ -82,6 +85,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       return "";
     }
   };
+
+  useEffect(() => {
+    if (audioRef && audioRef.current) {
+      audioRef.current.volume = chatSettings.volume / 100;
+    }
+  }, [chatSettings.volume]);
 
   useEffect(() => {
     if (audioRef.current) {
