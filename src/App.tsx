@@ -13,6 +13,7 @@ import AppInitializer from './pages/AppInitializer';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { Amplify } from 'aws-amplify';
 import { experimentalSettingsManager } from "./core/ExperimentalSettingsManager.ts";
+import Feedback from './pages/FeedbackPage.tsx';
 
 const experimentalSettings = experimentalSettingsManager.getSettings();
 
@@ -54,6 +55,7 @@ function App() {
                             <Route path="/select-language-to-learn" element={<SelectLanguageToLearn />} />
                             <Route path="/select-partner" element={<SelectPartner />} />
                             <Route path="/words" element={<WordsPage />} />
+                            <Route path="/feedbacks" element={<Feedback />} />
                           </Route>
                           <Route element={<SimpleLayout />}>
                           </Route>

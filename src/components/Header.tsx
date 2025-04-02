@@ -9,6 +9,7 @@ import {
   Settings,
   BookMarked,
   LayoutDashboard,
+  MessageCircleMore,
 } from "lucide-react";
 import { useAppContext } from "../contexts/AppContext";
 import { Auth } from "aws-amplify";
@@ -110,7 +111,15 @@ const Header: React.FC = () => {
                       </Link>
                     </MenuItem>
                   )}
-
+                  <MenuItem>
+                      <Link
+                        to="/feedbacks"
+                        className="flex items-center gap-2 block px-6 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        <MessageCircleMore className="w-5 h-5" />
+                        Feedback
+                      </Link>
+                    </MenuItem>
                   <MenuItem>
                     <button
                       onClick={ handleLogout }
@@ -236,6 +245,19 @@ const Header: React.FC = () => {
                           </NavLink>
                         </MenuItem>
                       )}
+                      <MenuItem>
+                        <NavLink
+                          to="/feedbacks"
+                          className={({ isActive }) =>
+                            `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
+                              isActive ? "bg-gray-100 dark:bg-gray-700" : ""
+                            }`
+                          }
+                        >
+                          <MessageCircleMore className="w-5 h-5" />
+                          Feedback
+                        </NavLink>
+                      </MenuItem>
                       <MenuItem>
                         <button
                           onClick={ handleLogout }
