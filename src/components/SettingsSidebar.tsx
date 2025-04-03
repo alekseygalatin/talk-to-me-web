@@ -93,8 +93,8 @@ export function SettingsSidebar({
                     className="w-full"
                   />
                 </div>
-
-                <div>
+                {/*
+                  <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                     Microphone Sensitivity
                   </label>
@@ -127,6 +127,8 @@ export function SettingsSidebar({
                     className="w-full"
                   />
                 </div>
+                */}
+                
                 <hr />
               </div>
             </div>

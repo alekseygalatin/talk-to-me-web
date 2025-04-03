@@ -14,6 +14,7 @@ import {experimentalSettingsManager} from "./ExperimentalSettingsManager.ts";
 import {Auth} from "aws-amplify";
 import {TranscriberStartParams, TranscriptResult} from "./Transcriber/Transcriber.ts";
 import {AudioMetadata, SocketRequestBuilder} from "../api/WebSocketApi/WebsocketRequest.ts";
+import { useChatSettings } from "../contexts/ChatSettingsContext";
 
 const TARGET_SIZE: number = 50_000;
 
@@ -54,6 +55,8 @@ export const useGraphProcessing = () => {
     const [transcript, setTranscript] = useState<TranscriptResult | null>(null);
     const [audioData, setAudioData] = useState<Blob | null>(null);
 
+    const { chatSettings } = useChatSettings();
+
     const audioContextRef = useRef<AudioContext | null>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
@@ -63,6 +66,12 @@ export const useGraphProcessing = () => {
     useEffect(() => {
         audioDataRef.current = audioData;
     }, [audioData]);
+
+    useEffect(() => {
+        if (audioRef && audioRef.current) {
+          audioRef.current.volume = chatSettings.volume / 100;
+        }
+      }, [chatSettings.volume]);
 
     // Handle incoming WebSocket messages
     useEffect(() => {
@@ -357,7 +366,8 @@ export const useGraphProcessing = () => {
             const url = URL.createObjectURL(audioBlob);
             const audio = new Audio(url);
             audioRef.current = audio;
-
+            audioRef.current.volume = chatSettings.volume / 100;
+            
             // Store the resolver so we can resolve it manually if stopped
             resolvePlayback = resolve;
 
