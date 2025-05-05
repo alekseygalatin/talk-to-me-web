@@ -16,6 +16,7 @@ import { Auth } from "aws-amplify";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { NavLink } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { LuSquareCheckBig } from "react-icons/lu";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -118,6 +119,15 @@ const Header: React.FC = () => {
                       >
                         <MessageCircleMore className="w-5 h-5" />
                         Feedback
+                      </Link>
+                    </MenuItem>
+                    <MenuItem>
+                      <Link
+                        to="/subscriptions"
+                        className="flex items-center gap-2 block px-6 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        <LuSquareCheckBig className="w-5 h-5" />
+                        Subscription
                       </Link>
                     </MenuItem>
                   <MenuItem>
@@ -256,6 +266,19 @@ const Header: React.FC = () => {
                         >
                           <MessageCircleMore className="w-5 h-5" />
                           Feedback
+                        </NavLink>
+                      </MenuItem>
+                      <MenuItem>
+                        <NavLink
+                          to="/subscriptions"
+                          className={({ isActive }) =>
+                            `flex items-center gap-2 px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 ${
+                              isActive ? "bg-gray-100 dark:bg-gray-700" : ""
+                            }`
+                          }
+                        >
+                          <LuSquareCheckBig className="w-5 h-5" />
+                          Subscription
                         </NavLink>
                       </MenuItem>
                       <MenuItem>
