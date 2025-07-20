@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { Auth } from 'aws-amplify';
 
 interface JwtPayload {
   exp: number;
@@ -19,13 +20,26 @@ const isTokenExpired = (token: string) => {
 export function withAuth<T extends object>(Component: React.ComponentType<T>) {
   return (props: T) => {
     const navigate = useNavigate();
-    const token = localStorage.getItem('idToken');
 
     useEffect(() => {
-      if (!token || isTokenExpired(token)) {
-        navigate('/login'); // Redirect to login if not authenticated
-      }
-    }, [token, navigate]);
+      const checkAuth = async () => {
+        try {
+          const session = await Auth.currentSession();
+          const token = session.getAccessToken().getJwtToken();
+
+          if (!token || isTokenExpired(token)) {
+            console.error("Token expired or missing");
+            navigate("/login");
+          }
+
+        } catch (error) {
+          console.error("User is not authenticated:", error);
+          navigate("/login");
+        }
+      };
+
+      checkAuth();
+    }, [navigate]);
 
     return <Component {...(props as T)} />;
   };

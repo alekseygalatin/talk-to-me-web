@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Volume2, Check, BookmarkPlus } from 'lucide-react';
+import { Volume2, BookmarkPlus } from 'lucide-react';
 import { forwardRef } from 'react';
 import {addWordToDictionary} from "../api/dictionaryApi.ts";
 import { Word } from '../models/Word.ts';
@@ -39,7 +39,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
           try {
               const result = await getTranslation(word);
               setTranslation(result!);
-          } catch (error) {
+          } catch (error: any) {
               if (error.name !== 'AbortError') {
                   console.error('Translation error:', error);
               }
@@ -76,8 +76,11 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
             await onWordAdded();
           }
         }
-      } catch (error) {
-        console.error('Error adding word to dictionary:', error);
+      } catch (error: any) {
+        if (error.response && error.response.status === 409) {
+          alert(error.response.data.message);
+        } else 
+          console.error('Error adding word to dictionary:', error);
       } finally {
         setIsAdding(false);
       }
@@ -99,7 +102,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
               <div className="flex flex-col">
                 <div className="flex items-center gap-4">
                   <div className='flex gap-2'>
-                    <span className="text-2xl font-semibold break-all">{word ?? translation?.word }</span>
+                    <span className="text-2xl font-semibold break-all">{translation?.word ? translation.word : word}</span>
                     <div className="flex items-start">
                       <button
                         onClick={() => {
@@ -201,7 +204,7 @@ const WordPopup = forwardRef<HTMLDivElement, WordPopupProps>(
                       <h3 className='text-sm font-medium mb-2 text-gray-500 dark:text-gray-400'>
                         Example
                       </h3>
-                      <p className='p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 break-all'>
+                      <p className='p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 break-words'>
                         {translation.example}
                       </p>
                     </div>

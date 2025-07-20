@@ -4,12 +4,32 @@ export class ExperimentalSettingsManager {
     private readonly settings: ExperimentalSettings;
 
     constructor() {
-        const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'local';
-        const isLocal = process.env.BACKEND_RUN_STRATEGY === 'local';
+        /*const isDevelopment = true;
+        const useLocalBackend = true;*/
 
+        const useLocalBackend = process.env.BACKEND_RUN_STRATEGY === 'local';
+        const isDevelopment = process.env.ENV === 'DEV' || process.env.ENV === 'local';
+
+        const useLocalWebSocket = false;
+        const streamSupported = true
         this.settings = {
-            UseStreamTranscription: isDevelopment,
-            UseLocalBackEnd: isLocal,
+            WebSocket: {
+                isDevelopment: useLocalWebSocket,
+                Url: useLocalWebSocket
+                    ? 'ws://127.0.0.1:8080'
+                    : 'wss://r2cf63ld99.execute-api.us-east-1.amazonaws.com/Prod'
+            },
+            Api: {
+                isDevelopment: isDevelopment,
+                Url: useLocalBackend
+                    ? 'https://localhost:7099/api'
+                    : "https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api"
+            },
+            Frontend: {
+                isDevelopment: isDevelopment,
+                Url: useLocalBackend ? "http://localhost:5173" : isDevelopment ? "https://dev.talknlearn.com" : "https://talknlearn.com",
+            },
+            StreamTranscriptionSupported: streamSupported
         };
     }
 

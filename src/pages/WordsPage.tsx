@@ -9,7 +9,6 @@ import WordPopup from '../components/WordPopup.tsx';
 import Spinner from '../components/Spinner.tsx';
 import { useNavigate } from 'react-router-dom';
 
-
 const WordsPage: React.FC = () => {
   const [isLoadingWords, setIsWordsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -42,11 +41,13 @@ const WordsPage: React.FC = () => {
   );
 
   const handleTranslateClick = () => {
-    if (wordForTranslation.trim() === '') {
+    
+    const cleanWord: string = wordForTranslation.trim().replace(/[^\p{L}\p{N}\s\-]/gu, '').toLowerCase();
+    if (!cleanWord) {
       return;
     }
-    const cleanWord = wordForTranslation.replace(/[^\p{L}\p{N}\s\-]/gu, '').toLowerCase();
-    setSelectedWord(cleanWord);
+    console.log(cleanWord);
+    setSelectedWord(cleanWord.toString());
   };
 
   const handleWordAdded = async () => {

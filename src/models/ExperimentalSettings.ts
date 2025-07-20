@@ -1,4 +1,16 @@
 export interface ExperimentalSettings {
-    UseStreamTranscription: boolean;
-    UseLocalBackEnd: boolean;
+    Api: ApiSettings
+    Frontend: FrontendSettings
+    WebSocket: ApiSettings
+    StreamTranscriptionSupported: boolean;
+}
+
+export interface ApiSettings{
+    isDevelopment: boolean;
+    Url: string;
+}
+
+export interface FrontendSettings{
+    isDevelopment: boolean;
+    Url: string;
 }

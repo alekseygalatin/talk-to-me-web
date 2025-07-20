@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLanguages } from "../hooks/useLanguages";
 import { createUserPreferences, updateUserPreferences } from "../api/userPreferencesApi";
-import AuthService from "../core/auth/authService";
 import { UserPreference } from "../models/UserPreference";
 import { useNavigate, useLocation  } from "react-router-dom";
 import Spinner from "./Spinner";
@@ -9,17 +8,22 @@ import { MessageCircleQuestion } from "lucide-react";
 import { useAppContext } from '../contexts/AppContext';
 
 const UserPreferencesForm: React.FC = () => {
-  const userId: string | null = AuthService.getUserId();
   const { languages, isLoading } = useLanguages();
   const [isSaving, setIsSaving] = useState(false);
-  const { preferences } = useAppContext();
+  const { preferences, setPreferences } = useAppContext();
 
-  const [fromPreferences, setPreference] = useState<UserPreference>(preferences ? preferences : {
+  const [fromPreferences, setFormPreference] = useState<UserPreference>({
     name: "",
     nativeLanguage: "en-US",
     preferedPronoun: "He/Him",
     currentLanguageToLearn: ""
   });
+
+  useEffect(() => {
+    if (preferences) {
+      setFormPreference(preferences)
+    }
+  }, [preferences]);
 
   const isEditing = !!preferences;
   const navigate = useNavigate();
@@ -33,7 +37,7 @@ const UserPreferencesForm: React.FC = () => {
     if (fromPreferences.nativeLanguage) {
       const selectedLanguage = getSelectedLanguage(fromPreferences.nativeLanguage);
       if (selectedLanguage) {
-        setPreference((prev) => ({
+        setFormPreference((prev) => ({
           ...prev,
           preferedPronoun: selectedLanguage.pronouns[0], // Default to the first pronoun
         }));
@@ -42,7 +46,7 @@ const UserPreferencesForm: React.FC = () => {
   }, [fromPreferences.nativeLanguage, languages]);
 
   const handleInputChange = (field: keyof UserPreference, value: string) => {
-    setPreference((prev) => {
+    setFormPreference((prev) => {
       const updatedPreferences = { ...prev, [field]: value };
       if (field === 'nativeLanguage') {
         const selectedLanguage = getSelectedLanguage(value);
@@ -57,12 +61,14 @@ const UserPreferencesForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+
     try {
       if (isEditing) {
-        await updateUserPreferences(userId!, fromPreferences!);
+        await updateUserPreferences(fromPreferences!);
       } else {
-        await createUserPreferences(userId!, fromPreferences!);
+        await createUserPreferences(fromPreferences!);
       }
+      setPreferences(fromPreferences);
       const returnTo = location.state?.returnTo || "/select-partner";
       navigate(returnTo); 
     } catch (error) {

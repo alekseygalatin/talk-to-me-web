@@ -1,18 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { experimentalSettingsManager } from "../../core/ExperimentalSettingsManager.ts";
 
-export const useWebSocket = (url: string | null) => {
+const experimentalSettings = experimentalSettingsManager.getSettings();
+
+export const useWebSocket = () => {
     const [webSocketMessage, setMessages] = useState<any>(); // Stores received messages
     const socketRef = useRef<WebSocket | null>(null); // WebSocket instance reference
     const [isWebSocketConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-
-        if (!url) {
-            return; // Do not initiate connection if no URL is provided
-        }
-
-        // Initialize WebSocket connection
-        const socket = new WebSocket(url);
+        const socket = new WebSocket(experimentalSettings.WebSocket.Url);
         socketRef.current = socket;
 
         // Connection opened
@@ -23,6 +20,7 @@ export const useWebSocket = (url: string | null) => {
 
         // Handle incoming messages
         socket.onmessage = (event) => {
+            //console.log("WebSocket message received:", event.data);
             setMessages(() => event.data); // Append message to state
         };
 
@@ -39,10 +37,13 @@ export const useWebSocket = (url: string | null) => {
 
         // Cleanup on unmount
         return () => {
-            socket.close();
+            if (socketRef.current) {
+                console.log("Closing WebSocket...");
+                socketRef.current.close();
+            }
             setIsConnected(false);
         };
-    }, [url]);
+    }, []);
 
     // Function to send a message
     const sendWebSocketMessage = (message: any) => {

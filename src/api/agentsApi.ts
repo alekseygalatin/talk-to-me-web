@@ -12,7 +12,7 @@ export const invokeStoryTailorAgent = async (locale: string): Promise<any> => {
 
 export const invokeTranslationAgent = async (text: string, locale: string): Promise<any> => {
   return await apiClient.post('/agents/' + locale + `/translationAgent/text/invoke`,
-      text);
+    text);
 }
 
 export const invokeRetailerAgent = async (promt: string, text: string, locale: string): Promise<any> => {
