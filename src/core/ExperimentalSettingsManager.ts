@@ -23,7 +23,7 @@ export class ExperimentalSettingsManager {
                 isDevelopment: isDevelopment,
                 Url: useLocalBackend
                     ? 'https://localhost:7099/api'
-                    : "https://w9urvqhqc6.execute-api.us-east-1.amazonaws.com/Prod/api"
+                    : "https://api.talknlearn.com/api"
             },
             Frontend: {
                 isDevelopment: isDevelopment,
