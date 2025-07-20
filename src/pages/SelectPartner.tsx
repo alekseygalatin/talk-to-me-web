@@ -56,13 +56,13 @@ const partners: Partner[] = [
     description: 'Expert in vocabulary building and word usage.',
     icon: <TableProperties className="w-8 h-8 text-blue-500" />,
   },
-  {
-    id: '6',
-    name: 'Liam',
-    role: 'Live Conversation Partner',
-    description: 'Engages in live conversations without text input.',
-    icon: <Mic className="w-8 h-8 text-blue-500" />,
-  },
+  // {
+  //   id: '6',
+  //   name: 'Liam',
+  //   role: 'Live Conversation Partner',
+  //   description: 'Engages in live conversations without text input.',
+  //   icon: <Mic className="w-8 h-8 text-blue-500" />,
+  // },
 ];
 
 function SelectPartner() {
